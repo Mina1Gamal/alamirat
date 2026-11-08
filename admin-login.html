@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل دخول الإدارة</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Cairo',sans-serif;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;color:#1a1a2e}
+.login-card{background:#fff;border-radius:20px;padding:40px 32px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-icon{width:72px;height:72px;background:linear-gradient(135deg,#e94560,#ff6b8a);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px}
+h1{text-align:center;font-size:24px;margin-bottom:8px}
+.subtitle{text-align:center;color:#6c757d;font-size:14px;margin-bottom:28px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+.form-group input{width:100%;padding:12px 14px;border:2px solid #e9ecef;border-radius:12px;outline:none;font-size:15px;font-family:inherit;transition:.15s}
+.form-group input:focus{border-color:#e94560}
+.btn{width:100%;padding:14px;background:#e94560;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;transition:.2s}
+.btn:hover{background:#d63851}
+.btn:disabled{background:#ccc;cursor:not-allowed}
+.error{background:#f8d7da;color:#721c24;padding:10px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none}
+.error.show{display:block}
+.link{display:block;text-align:center;margin-top:20px;color:#6c757d;font-size:14px;text-decoration:none}
+.link:hover{color:#e94560}
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="login-icon">🔐</div>
+  <h1>لوحة الإدارة</h1>
+  <p class="subtitle">سجل الدخول للمتابعة</p>
+  <div class="error" id="errorBox"></div>
+  <form id="loginForm">
+    <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="email" required placeholder="admin@example.com"></div>
+    <div class="form-group"><label>كلمة المرور</label><input type="password" id="password" required placeholder="••••••••"></div>
+    <button type="submit" class="btn" id="loginBtn">دخول</button>
+  </form>
+  <a href="index.html" class="link">← العودة للمتجر</a>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, getDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const errorBox = document.getElementById("errorBox");
+function showError(msg) { errorBox.textContent = msg; errorBox.classList.add("show"); }
+
+async function isAdminUser(uid) {
+  try {
+    const snap = await getDoc(doc(db, "admins", uid));
+    return snap.exists() && snap.data().active === true;
+  } catch (e) {
+    console.error("Admin check failed:", e);
+    return false;
+  }
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const ok = await isAdminUser(user.uid);
+    if (ok) {
+      window.location.href = "admin-orders.html";
+    } else {
+      showError("هذا الحساب ليس لديه صلاحيات الإدارة");
+      await signOut(auth);
+    }
+  }
+});
+
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorBox.classList.remove("show");
+  const btn = document.getElementById("loginBtn");
+  btn.disabled = true; btn.textContent = "جاري التحقق...";
+  try {
+    const cred = await signInWithEmailAndPassword(
+      auth,
+      document.getElementById("email").value,
+      document.getElementById("password").value
+    );
+    const ok = await isAdminUser(cred.user.uid);
+    if (!ok) {
+      await signOut(auth);
+      showError("هذا الحساب ليس لديه صلاحيات الإدارة");
+      btn.disabled = false; btn.textContent = "دخول";
+      return;
+    }
+    window.location.href = "admin-orders.html";
+  } catch (err) {
+    const msgs = {
+      "auth/user-not-found": "البريد الإلكتروني غير مسجل",
+      "auth/wrong-password": "كلمة المرور غير صحيحة",
+      "auth/invalid-credential": "البيانات غير صحيحة",
+      "auth/invalid-email": "البريد الإلكتروني غير صالح",
+      "auth/too-many-requests": "محاولات كثيرة، حاول لاحقاً",
+      "auth/network-request-failed": "تعذر الاتصال، تحقق من الإنترنت"
+    };
+    showError(msgs[err.code] || err.message);
+    btn.disabled = false; btn.textContent = "دخول";
+  }
+});
+</script>
+</body>
+</html>
