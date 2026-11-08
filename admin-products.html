@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -409,31 +410,63 @@ window.removeImage = (i) => {
 function renderChips() {
   const sBox = document.getElementById("sizesChip");
   const cBox = document.getElementById("colorsChip");
+  
+  // تحديث واجهة المقاسات
   sBox.innerHTML = currentSizes.map((s, i) =>
-    `<span class="chip">${s}<button onclick="window.removeSize(${i})">✕</button></span>`).join("") + `<input id="sizeInput" placeholder="اكتب ثم Enter">`;
+    `<span class="chip">${s}<button type="button" onclick="window.removeSize(${i})">✕</button></span>`).join("") 
+    + `<div style="display:flex;width:100%;gap:6px;margin-top:8px">
+         <input id="sizeInput" placeholder="أضف مقاس..." enterkeyhint="done" style="flex:1;padding:8px">
+         <button type="button" style="background:var(--accent);color:#fff;border-radius:8px;padding:0 16px;font-weight:700;cursor:pointer" onclick="window.addSizeChip()">إضافة</button>
+       </div>`;
+
+  // تحديث واجهة الألوان
   cBox.innerHTML = currentColors.map((c, i) =>
-    `<span class="chip">${c}<button onclick="window.removeColor(${i})">✕</button></span>`).join("") + `<input id="colorInput" placeholder="اكتب ثم Enter">`;
+    `<span class="chip">${c}<button type="button" onclick="window.removeColor(${i})">✕</button></span>`).join("") 
+    + `<div style="display:flex;width:100%;gap:6px;margin-top:8px">
+         <input id="colorInput" placeholder="أضف لون..." enterkeyhint="done" style="flex:1;padding:8px">
+         <button type="button" style="background:var(--accent);color:#fff;border-radius:8px;padding:0 16px;font-weight:700;cursor:pointer" onclick="window.addColorChip()">إضافة</button>
+       </div>`;
+
+  // دعم زر Enter للكمبيوتر
   document.getElementById("sizeInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const v = e.target.value.trim();
-      if (v && !currentSizes.includes(v)) { currentSizes.push(v); renderChips(); renderVariantMatrix(); }
-      else if (v) e.target.value = "";
-    }
+    if (e.key === "Enter") { e.preventDefault(); window.addSizeChip(); }
   });
   document.getElementById("colorInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const v = e.target.value.trim();
-      if (v && !currentColors.includes(v)) { currentColors.push(v); renderChips(); renderVariantMatrix(); }
-      else if (v) e.target.value = "";
-    }
+    if (e.key === "Enter") { e.preventDefault(); window.addColorChip(); }
   });
-  document.getElementById("sizeInput")?.focus();
 }
+
+// دوال الإضافة الجديدة
+window.addSizeChip = () => {
+  const inp = document.getElementById("sizeInput");
+  if (!inp) return;
+  const v = inp.value.trim();
+  if (v && !currentSizes.includes(v)) {
+    currentSizes.push(v);
+    renderChips();
+    renderVariantMatrix();
+  } else if (v) {
+    inp.value = ""; // مسح الحقل لو مكرر
+  }
+  document.getElementById("sizeInput")?.focus();
+};
+
+window.addColorChip = () => {
+  const inp = document.getElementById("colorInput");
+  if (!inp) return;
+  const v = inp.value.trim();
+  if (v && !currentColors.includes(v)) {
+    currentColors.push(v);
+    renderChips();
+    renderVariantMatrix();
+  } else if (v) {
+    inp.value = ""; // مسح الحقل لو مكرر
+  }
+  document.getElementById("colorInput")?.focus();
+};
+
 window.removeSize = (i) => { currentSizes.splice(i, 1); renderChips(); renderVariantMatrix(); };
 window.removeColor = (i) => { currentColors.splice(i, 1); renderChips(); renderVariantMatrix(); };
-
 // ============ VARIANT MATRIX ============
 function renderVariantMatrix() {
   const box = document.getElementById("variantMatrix");
