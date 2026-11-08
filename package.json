@@ -1,13 +1,7 @@
 {
-  "name": "clothing-store-functions",
-  "description": "Cloud Functions for clothing e-commerce",
+  "name": "alamirat-store",
+  "version": "1.0.0",
   "engines": {
-    "node": "20"
-  },
-  "main": "index.js",
-  "dependencies": {
-    "firebase-admin": "^12.6.0",
-    "firebase-functions": "^6.0.0"
-  },
-  "private": true
+    "node": "24.x"
+  }
 }
