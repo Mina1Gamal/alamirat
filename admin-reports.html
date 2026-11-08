@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>التقارير</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f4f6f9;--card:#fff;--primary:#1a1a2e;--accent:#e94560;--muted:#6c757d;--border:#e9ecef;--success:#28a745;--danger:#dc3545;--warning:#ffc107;--info:#17a2b8;--purple:#6f42c1}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--primary);line-height:1.6}
+button{font-family:inherit;cursor:pointer;border:none}
+input,select{font-family:inherit;font-size:14px}
+.top-bar{background:var(--primary);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.top-bar .brand{font-size:18px;font-weight:900;display:flex;align-items:center;gap:8px}
+.nav-links{display:flex;gap:6px;flex-wrap:wrap}
+.nav-links a{color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;transition:.2s}
+.nav-links a:hover,.nav-links a.active{background:rgba(255,255,255,.15)}
+.nav-links a.logout{background:var(--danger)}
+.container{max-width:1400px;margin:0 auto;padding:24px}
+.date-filters{background:#fff;border-radius:14px;padding:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.date-filters label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px}
+.date-filters input,.date-filters select{padding:9px 12px;border:2px solid var(--border);border-radius:10px;outline:none;font-family:inherit}
+.date-filters input:focus,.date-filters select:focus{border-color:var(--accent)}
+.quick-filters{display:flex;gap:6px;flex-wrap:wrap}
+.quick-btn{padding:8px 14px;border-radius:8px;background:#fff;border:2px solid var(--border);font-size:12px;font-weight:700;cursor:pointer;color:var(--primary)}
+.quick-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;right:0;width:4px;height:100%;background:var(--accent)}
+.stat-label{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px}
+.stat-value{font-size:24px;font-weight:900}
+.stat-card.green::before{background:var(--success)}
+.stat-card.blue::before{background:var(--info)}
+.stat-card.orange::before{background:var(--warning)}
+.stat-card.purple::before{background:var(--purple)}
+.stat-card.red::before{background:var(--danger)}
+.chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;margin-bottom:24px}
+.chart-card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.chart-card h3{font-size:15px;margin-bottom:16px;font-weight:900}
+.chart-container{position:relative;height:280px}
+.table-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:20px}
+.table-card h3{padding:18px 20px;font-size:16px;font-weight:900;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.table-card table{width:100%;border-collapse:collapse;font-size:14px}
+.table-card thead{background:#f8f9fa}
+.table-card th{padding:12px 16px;text-align:right;font-weight:700;font-size:12px;color:#495057;white-space:nowrap}
+.table-card td{padding:12px 16px;border-top:1px solid var(--border)}
+.table-card tbody tr:hover{background:#f8f9fa}
+.btn{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;transition:.2s;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#d63851}
+.empty-state{text-align:center;padding:40px;color:var(--muted)}
+.loading{text-align:center;padding:60px;color:var(--muted)}
+.spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:500;display:flex;flex-direction:column;gap:10px;align-items:center}
+.toast{background:var(--primary);color:#fff;padding:12px 24px;border-radius:12px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15);max-width:90vw}
+.toast.success{background:var(--success)}.toast.error{background:var(--danger)}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="brand">👕 لوحة الإدارة</div>
+  <div class="nav-links">
+    <a href="admin-orders.html">📋 الطلبات</a>
+    <a href="admin-products.html">📦 المنتجات</a>
+    <a href="admin-reports.html" class="active">📊 التقارير</a>
+    <a href="#" class="logout" id="logoutBtn">🚪 خروج</a>
+  </div>
+</div>
+
+<div class="container">
+  <div id="authLoading" class="loading"><div class="spinner"></div>جاري التحقق...</div>
+  <div id="mainContent" style="display:none">
+    <h2 style="margin-bottom:20px;font-size:22px">📊 تقارير المبيعات والمخزون</h2>
+
+    <div class="date-filters">
+      <div>
+        <label>الفترة السريعة</label>
+        <div class="quick-filters">
+          <button class="quick-btn" data-range="today">اليوم</button>
+          <button class="quick-btn active" data-range="7">آخر 7 أيام</button>
+          <button class="quick-btn" data-range="30">آخر 30 يوم</button>
+          <button class="quick-btn" data-range="month">هذا الشهر</button>
+        </div>
+      </div>
+      <div>
+        <label>من تاريخ</label>
+        <input type="date" id="dateFrom">
+      </div>
+      <div>
+        <label>إلى تاريخ</label>
+        <input type="date" id="dateTo">
+      </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="chart-grid">
+      <div class="chart-card"><h3>📈 المبيعات خلال الفترة</h3><div class="chart-container"><canvas id="salesChart"></canvas></div></div>
+      <div class="chart-card"><h3>📊 الطلبات حسب الحالة</h3><div class="chart-container"><canvas id="statusChart"></canvas></div></div>
+      <div class="chart-card"><h3>🏆 أفضل المنتجات مبيعاً</h3><div class="chart-container"><canvas id="bestSellersChart"></canvas></div></div>
+      <div class="chart-card"><h3>📏 المقاسات الأكثر طلباً</h3><div class="chart-container"><canvas id="sizesChart"></canvas></div></div>
+      <div class="chart-card"><h3>🎨 الألوان الأكثر طلباً</h3><div class="chart-container"><canvas id="colorsChart"></canvas></div></div>
+    </div>
+
+    <div class="table-card">
+      <h3>🏆 أفضل المنتجات <button class="btn btn-primary" onclick="window.exportCSV('bestSellers')">📥 CSV</button></h3>
+      <table>
+        <thead><tr><th>#</th><th>المنتج</th><th>القطع المباعة</th><th>الإيرادات</th></tr></thead>
+        <tbody id="bestSellersTable"></tbody>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <h3>⚠️ منتجات بمخزون منخفض</h3>
+      <table>
+        <thead><tr><th>المنتج</th><th>الكمية المتبقية</th><th>الحالة</th></tr></thead>
+        <tbody id="lowStockTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module">
+import { db, auth } from "./firebase-config.js";
+import { collection, onSnapshot, doc, getDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+let allOrders = [], allProducts = [];
+let charts = {};
+let currentRange = "7";
+let bestSellersData = [];
+
+function toast(msg, type="info") {
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById("toastContainer").appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+function formatPrice(n) { return Number(n || 0).toFixed(2) + " ج.م"; }
+
+// ============ AUTH (Firestore check) ============
+async function isAdminUser(uid) {
+  try {
+    const snap = await getDoc(doc(db, "admins", uid));
+    return snap.exists() && snap.data().active === true;
+  } catch (e) {
+    console.error("Admin check failed:", e);
+    return false;
+  }
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "admin-login.html"; return; }
+  const ok = await isAdminUser(user.uid);
+  if (!ok) { await signOut(auth); window.location.href = "admin-login.html"; return; }
+  document.getElementById("authLoading").style.display = "none";
+  document.getElementById("mainContent").style.display = "block";
+  loadData();
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async (e) => {
+  e.preventDefault();
+  await signOut(auth);
+  window.location.href = "admin-login.html";
+});
+
+function loadData() {
+  onSnapshot(collection(db, "orders"), snap => {
+    allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    applyDateRange();
+  }, err => toast("خطأ تحميل الطلبات: " + err.message, "error"));
+
+  onSnapshot(collection(db, "products"), snap => {
+    allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderLowStock();
+  }, err => toast("خطأ تحميل المنتجات: " + err.message, "error"));
+}
+
+function setRange(mode) {
+  currentRange = mode;
+  document.querySelectorAll(".quick-btn").forEach(b => b.classList.toggle("active", b.dataset.range === mode));
+  const now = new Date();
+  let from;
+  if (mode === "today") { from = new Date(now.setHours(0,0,0,0)); document.getElementById("dateFrom").value = from.toISOString().slice(0,10); document.getElementById("dateTo").value = new Date().toISOString().slice(0,10); }
+  else if (mode === "7") from = new Date(Date.now() - 7 * 86400000);
+  else if (mode === "30") from = new Date(Date.now() - 30 * 86400000);
+  else if (mode === "month") from = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (mode !== "today") {
+    document.getElementById("dateFrom").value = from.toISOString().slice(0,10);
+    document.getElementById("dateTo").value = new Date().toISOString().slice(0,10);
+  }
+  applyDateRange();
+}
+
+function applyDateRange() {
+  const from = document.getElementById("dateFrom").value;
+  const to = document.getElementById("dateTo").value;
+  let filtered = allOrders;
+  if (from) {
+    const f = new Date(from);
+    filtered = filtered.filter(o => {
+      const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+      return d >= f;
+    });
+  }
+  if (to) {
+    const t = new Date(to); t.setHours(23,59,59);
+    filtered = filtered.filter(o => {
+      const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+      return d <= t;
+    });
+  }
+  renderStats(filtered);
+  renderCharts(filtered);
+  renderBestSellersTable(filtered);
+}
+
+function renderStats(orders) {
+  const active = orders.filter(o => o.status !== "cancelled");
+  const revenue = active.reduce((s, o) => s + (o.total || 0), 0);
+  const totalOrders = orders.length;
+  const itemsSold = active.reduce((s, o) => s + (o.items || []).reduce((x, i) => x + i.quantity, 0), 0);
+  const avgOrder = active.length > 0 ? revenue / active.length : 0;
+  document.getElementById("statsGrid").innerHTML = `
+    <div class="stat-card green"><div class="stat-label">إجمالي الإيرادات</div><div class="stat-value">${formatPrice(revenue)}</div></div>
+    <div class="stat-card blue"><div class="stat-label">عدد الطلبات</div><div class="stat-value">${totalOrders}</div></div>
+    <div class="stat-card orange"><div class="stat-label">متوسط قيمة الطلب</div><div class="stat-value">${formatPrice(avgOrder)}</div></div>
+    <div class="stat-card purple"><div class="stat-label">القطع المباعة</div><div class="stat-value">${itemsSold}</div></div>
+  `;
+}
+
+function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[key] = null; } }
+function renderCharts(orders) {
+  const salesByDay = {};
+  orders.filter(o => o.status !== "cancelled").forEach(o => {
+    const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+    const k = d.toISOString().slice(0,10);
+    salesByDay[k] = (salesByDay[k] || 0) + (o.total || 0);
+  });
+  const days = Object.keys(salesByDay).sort();
+  destroyChart("sales");
+  charts.sales = new Chart(document.getElementById("salesChart"), {
+    type: "line",
+    data: { labels: days.map(d => new Date(d).toLocaleDateString("ar-EG")), datasets: [{
+      label: "المبيعات (ج.م)", data: days.map(d => salesByDay[d]),
+      borderColor: "#e94560", backgroundColor: "rgba(233,69,96,0.1)",
+      fill: true, tension: 0.3
+    }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
+
+  const statusCounts = { new:0, confirmed:0, preparing:0, shipped:0, delivered:0, cancelled:0 };
+  orders.forEach(o => { if (statusCounts[o.status] !== undefined) statusCounts[o.status]++; });
+  destroyChart("status");
+  charts.status = new Chart(document.getElementById("statusChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["جديد","مؤكد","قيد التجهيز","تم الشحن","تم التوصيل","ملغي"],
+      datasets: [{ data: Object.values(statusCounts),
+        backgroundColor: ["#cfe2ff","#d1e7dd","#fff3cd","#cff4fc","#28a745","#dc3545"] }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+
+  const productSales = {};
+  orders.filter(o => o.status !== "cancelled").forEach(o => (o.items || []).forEach(i => {
+    productSales[i.productName] = (productSales[i.productName] || 0) + i.quantity;
+  }));
+  const topProducts = Object.entries(productSales).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  destroyChart("bestSellers");
+  charts.bestSellers = new Chart(document.getElementById("bestSellersChart"), {
+    type: "bar",
+    data: {
+      labels: topProducts.map(p => p[0]),
+      datasets: [{ label: "قطع", data: topProducts.map(p => p[1]),
+        backgroundColor: "#1a1a2e" }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: "y",
+      plugins: { legend: { display: false } } }
+  });
+
+  const sizeSales = {};
+  orders.filter(o => o.status !== "cancelled").forEach(o => (o.items || []).forEach(i => {
+    sizeSales[i.size] = (sizeSales[i.size] || 0) + i.quantity;
+  }));
+  destroyChart("sizes");
+  charts.sizes = new Chart(document.getElementById("sizesChart"), {
+    type: "bar",
+    data: {
+      labels: Object.keys(sizeSales),
+      datasets: [{ label: "قطع", data: Object.values(sizeSales),
+        backgroundColor: "#17a2b8" }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } } }
+  });
+
+  const colorSales = {};
+  orders.filter(o => o.status !== "cancelled").forEach(o => (o.items || []).forEach(i => {
+    colorSales[i.color] = (colorSales[i.color] || 0) + i.quantity;
+  }));
+  destroyChart("colors");
+  charts.colors = new Chart(document.getElementById("colorsChart"), {
+    type: "pie",
+    data: {
+      labels: Object.keys(colorSales),
+      datasets: [{ data: Object.values(colorSales),
+        backgroundColor: ["#e94560","#1a1a2e","#17a2b8","#ffc107","#6f42c1","#28a745","#fd7e14","#6c757d"] }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+}
+
+function renderBestSellersTable(orders) {
+  const productStats = {};
+  orders.filter(o => o.status !== "cancelled").forEach(o => (o.items || []).forEach(i => {
+    if (!productStats[i.productName]) {
+      productStats[i.productName] = { qty: 0, revenue: 0 };
+    }
+    productStats[i.productName].qty += i.quantity;
+    productStats[i.productName].revenue += i.subtotal;
+  }));
+  bestSellersData = Object.entries(productStats)
+    .map(([name, s]) => ({ name, qty: s.qty, revenue: s.revenue }))
+    .sort((a,b) => b.qty - a.qty);
+  const tbody = document.getElementById("bestSellersTable");
+  if (!bestSellersData.length) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">لا توجد بيانات</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = bestSellersData.map((p, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.qty}</td>
+      <td>${formatPrice(p.revenue)}</td>
+    </tr>
+  `).join("");
+}
+
+function renderLowStock() {
+  const low = allProducts.filter(p => p.status === "active" && (p.totalStock || 0) < 10)
+    .sort((a,b) => (a.totalStock || 0) - (b.totalStock || 0));
+  const tbody = document.getElementById("lowStockTable");
+  if (!low.length) {
+    tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">جميع المنتجات بمخزون جيد ✅</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = low.map(p => {
+    const s = p.totalStock || 0;
+    return `<tr>
+      <td><strong>${p.name}</strong></td>
+      <td><span style="color:${s === 0 ? '#dc3545' : '#ffc107'};font-weight:700">${s} قطعة</span></td>
+      <td>${s === 0 ? "❌ نفذت" : "⚠️ منخفض"}</td>
+    </tr>`;
+  }).join("");
+}
+
+window.exportCSV = (type) => {
+  let rows = [], filename = "";
+  if (type === "bestSellers") {
+    filename = "best-sellers.csv";
+    rows = [["#","المنتج","الكمية المباعة","الإيرادات"]];
+    bestSellersData.forEach((p, i) => rows.push([i+1, p.name, p.qty, p.revenue.toFixed(2)]));
+  }
+  const csv = "\uFEFF" + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  toast("تم تصدير الملف ✓", "success");
+};
+
+document.querySelectorAll(".quick-btn").forEach(btn => {
+  btn.addEventListener("click", () => setRange(btn.dataset.range));
+});
+document.getElementById("dateFrom").addEventListener("change", applyDateRange);
+document.getElementById("dateTo").addEventListener("change", applyDateRange);
+
+setRange("7");
+</script>
+</body>
+</html>

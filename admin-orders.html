@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إدارة الطلبات</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f4f6f9;--card:#fff;--primary:#1a1a2e;--accent:#e94560;--muted:#6c757d;--border:#e9ecef;--success:#28a745;--danger:#dc3545;--warning:#ffc107;--info:#17a2b8;--purple:#6f42c1}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--primary);line-height:1.6}
+button{font-family:inherit;cursor:pointer;border:none}
+input,select,textarea{font-family:inherit;font-size:14px}
+.top-bar{background:var(--primary);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.top-bar .brand{font-size:18px;font-weight:900;display:flex;align-items:center;gap:8px}
+.nav-links{display:flex;gap:6px;flex-wrap:wrap}
+.nav-links a{color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;transition:.2s}
+.nav-links a:hover,.nav-links a.active{background:rgba(255,255,255,.15)}
+.nav-links a.logout{background:var(--danger)}
+.container{max-width:1400px;margin:0 auto;padding:24px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;right:0;width:4px;height:100%;background:var(--accent)}
+.stat-label{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px}
+.stat-value{font-size:24px;font-weight:900}
+.stat-card.blue::before{background:var(--info)}
+.stat-card.green::before{background:var(--success)}
+.stat-card.orange::before{background:var(--warning)}
+.stat-card.red::before{background:var(--danger)}
+.stat-card.purple::before{background:var(--purple)}
+.section-title{font-size:20px;font-weight:900;margin:24px 0 16px;display:flex;align-items:center;gap:10px}
+.filters-bar{background:#fff;border-radius:14px;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.filter-group label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px}
+.filter-group input,.filter-group select{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:10px;outline:none;transition:.15s;background:#fff}
+.filter-group input:focus,.filter-group select:focus{border-color:var(--accent)}
+.table-wrap{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:800px}
+thead{background:#f8f9fa}
+th{padding:14px;text-align:right;font-weight:700;font-size:13px;color:#495057;border-bottom:2px solid var(--border);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr:hover{background:#f8f9fa;cursor:pointer}
+.status-badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;white-space:nowrap}
+.status-new{background:#cfe2ff;color:#084298}
+.status-confirmed{background:#d1e7dd;color:#0f5132}
+.status-preparing{background:#fff3cd;color:#664d03}
+.status-shipped{background:#cff4fc;color:#055160}
+.status-delivered{background:#d1e7dd;color:#0a3622}
+.status-cancelled{background:#f8d7da;color:#721c24}
+.btn{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;transition:.2s;cursor:pointer}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#d63851}
+.btn-secondary{background:var(--border);color:var(--primary)}
+.btn-secondary:hover{background:#ddd}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:6px 10px;font-size:12px}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state-icon{font-size:48px;margin-bottom:12px}
+.loading{text-align:center;padding:60px;color:var(--muted)}
+.spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.modal-overlay.active{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:760px;width:100%;max-height:90vh;overflow-y:auto;position:relative;padding:28px}
+.modal-close{position:absolute;top:14px;left:14px;background:var(--border);width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer}
+.modal h2{margin-bottom:20px;font-size:22px}
+.detail-section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.detail-section:last-child{border-bottom:none}
+.detail-section h3{font-size:14px;color:var(--muted);margin-bottom:10px;font-weight:700}
+.detail-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px}
+.detail-row span:first-child{color:var(--muted)}
+.detail-row span:last-child{font-weight:700}
+.order-item-row{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:center}
+.order-item-img{width:60px;height:60px;border-radius:8px;overflow:hidden;background:#f1f3f5;flex-shrink:0}
+.order-item-img img{width:100%;height:100%;object-fit:cover}
+.order-item-info{flex:1;font-size:13px}
+.order-item-name{font-weight:700;margin-bottom:2px}
+.order-item-variant{color:var(--muted);font-size:12px}
+.status-selector{padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;width:100%;font-family:inherit;font-weight:700}
+.status-selector:focus{outline:none;border-color:var(--accent)}
+.notes-input{width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;resize:vertical;min-height:70px}
+.notes-input:focus{outline:none;border-color:var(--accent)}
+.toast-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:500;display:flex;flex-direction:column;gap:10px;align-items:center}
+.toast{background:var(--primary);color:#fff;padding:12px 24px;border-radius:12px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15);max-width:90vw}
+.toast.success{background:var(--success)}.toast.error{background:var(--danger)}
+.tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;background:#fff;padding:6px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.tab{padding:10px 20px;border-radius:8px;background:transparent;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;transition:.2s}
+.tab.active{background:var(--accent);color:#fff}
+.demand-card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:20px}
+.demand-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="brand">👕 لوحة الإدارة</div>
+  <div class="nav-links">
+    <a href="admin-orders.html" class="active">📋 الطلبات</a>
+    <a href="admin-products.html">📦 المنتجات</a>
+    <a href="admin-reports.html">📊 التقارير</a>
+    <a href="#" class="logout" id="logoutBtn">🚪 خروج</a>
+  </div>
+</div>
+
+<div class="container">
+  <div id="authLoading" class="loading"><div class="spinner"></div>جاري التحقق...</div>
+  <div id="mainContent" style="display:none">
+
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="orders">📋 الطلبات</button>
+      <button class="tab" data-tab="demand">📈 تحليل احتياجات المنتجات</button>
+    </div>
+
+    <div id="tab-orders">
+      <div class="filters-bar">
+        <div class="filter-group"><label>🔍 بحث</label><input id="searchInput" placeholder="رقم الطلب / اسم / هاتف"></div>
+        <div class="filter-group"><label>الحالة</label>
+          <select id="statusFilter">
+            <option value="">الكل</option>
+            <option value="new">جديد</option>
+            <option value="confirmed">مؤكد</option>
+            <option value="preparing">قيد التجهيز</option>
+            <option value="shipped">تم الشحن</option>
+            <option value="delivered">تم التوصيل</option>
+            <option value="cancelled">ملغي</option>
+          </select>
+        </div>
+        <div class="filter-group"><label>من تاريخ</label><input type="date" id="dateFrom"></div>
+        <div class="filter-group"><label>إلى تاريخ</label><input type="date" id="dateTo"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>رقم الطلب</th>
+              <th>العميل</th>
+              <th>الهاتف</th>
+              <th>التاريخ</th>
+              <th>القطع</th>
+              <th>الإجمالي</th>
+              <th>الحالة</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody">
+            <tr><td colspan="8"><div class="loading"><div class="spinner"></div>تحميل...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-demand" style="display:none">
+      <div class="demand-card">
+        <h3 style="margin-bottom:16px">🎯 تحليل احتياجات المنتجات حسب المتغيرات</h3>
+        <div class="demand-filters">
+          <div class="filter-group"><label>المنتج</label><select id="demandProduct"><option value="">الكل</option></select></div>
+          <div class="filter-group"><label>اللون</label><select id="demandColor"><option value="">الكل</option></select></div>
+          <div class="filter-group"><label>المقاس</label><select id="demandSize"><option value="">الكل</option></select></div>
+          <div class="filter-group"><label>حالة الطلب</label>
+            <select id="demandStatus">
+              <option value="active">الطلبات النشطة (غير ملغاة)</option>
+              <option value="new">جديد فقط</option>
+              <option value="confirmed">مؤكد فقط</option>
+              <option value="preparing">قيد التجهيز</option>
+              <option value="shipped">تم الشحن</option>
+              <option value="all">كل الطلبات</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>المنتج</th>
+                <th>اللون</th>
+                <th>المقاس</th>
+                <th>الكمية المطلوبة</th>
+                <th>عدد الطلبات</th>
+              </tr>
+            </thead>
+            <tbody id="demandTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="orderModal">
+  <div class="modal">
+    <button class="modal-close" onclick="window.closeOrderModal()">✕</button>
+    <div id="orderDetailContent"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module">
+import { db, auth } from "./firebase-config.js";
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp, getDoc, runTransaction }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+let allOrders = [];
+let currentTab = "orders";
+let currentOrder = null;
+
+const STATUS_LABELS = {
+  new: "جديد", confirmed: "مؤكد", preparing: "قيد التجهيز",
+  shipped: "تم الشحن", delivered: "تم التوصيل", cancelled: "ملغي"
+};
+
+function toast(msg, type="info") {
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById("toastContainer").appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+function formatPrice(n) { return Number(n || 0).toFixed(2) + " ج.م"; }
+function formatDate(ts) {
+  if (!ts) return "—";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString("ar-EG", { year:"numeric", month:"2-digit", day:"2-digit" })
+    + " " + d.toLocaleTimeString("ar-EG", { hour:"2-digit", minute:"2-digit" });
+}
+
+// ============ AUTH (Firestore check) ============
+async function isAdminUser(uid) {
+  try {
+    const snap = await getDoc(doc(db, "admins", uid));
+    return snap.exists() && snap.data().active === true;
+  } catch (e) {
+    console.error("Admin check failed:", e);
+    return false;
+  }
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "admin-login.html"; return; }
+  const ok = await isAdminUser(user.uid);
+  if (!ok) { await signOut(auth); window.location.href = "admin-login.html"; return; }
+  document.getElementById("authLoading").style.display = "none";
+  document.getElementById("mainContent").style.display = "block";
+  loadOrders();
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async (e) => {
+  e.preventDefault();
+  await signOut(auth);
+  window.location.href = "admin-login.html";
+});
+
+// ============ LOAD ORDERS ============
+function loadOrders() {
+  const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+  onSnapshot(q, snap => {
+    allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderStats();
+    renderOrdersTable();
+    populateDemandFilters();
+    renderDemandTable();
+  }, err => {
+    console.error(err);
+    toast("خطأ في تحميل الطلبات: " + err.message, "error");
+  });
+}
+
+// ============ STATS ============
+function renderStats() {
+  const total = allOrders.length;
+  const countByStatus = (s) => allOrders.filter(o => o.status === s).length;
+  const totalSales = allOrders.filter(o => o.status !== "cancelled").reduce((s, o) => s + (o.total || 0), 0);
+  const totalItems = allOrders.filter(o => o.status !== "cancelled")
+    .reduce((s, o) => s + (o.items || []).reduce((x, i) => x + i.quantity, 0), 0);
+
+  document.getElementById("statsGrid").innerHTML = `
+    <div class="stat-card blue"><div class="stat-label">إجمالي الطلبات</div><div class="stat-value">${total}</div></div>
+    <div class="stat-card orange"><div class="stat-label">جديدة</div><div class="stat-value">${countByStatus("new")}</div></div>
+    <div class="stat-card green"><div class="stat-label">مؤكدة</div><div class="stat-value">${countByStatus("confirmed")}</div></div>
+    <div class="stat-card purple"><div class="stat-label">تم التوصيل</div><div class="stat-value">${countByStatus("delivered")}</div></div>
+    <div class="stat-card red"><div class="stat-label">ملغاة</div><div class="stat-value">${countByStatus("cancelled")}</div></div>
+    <div class="stat-card green"><div class="stat-label">إجمالي المبيعات</div><div class="stat-value">${formatPrice(totalSales)}</div></div>
+    <div class="stat-card blue"><div class="stat-label">القطع المباعة</div><div class="stat-value">${totalItems}</div></div>
+  `;
+}
+
+// ============ ORDERS TABLE ============
+function getFilteredOrders() {
+  const search = document.getElementById("searchInput").value.trim().toLowerCase();
+  const status = document.getElementById("statusFilter").value;
+  const from = document.getElementById("dateFrom").value;
+  const to = document.getElementById("dateTo").value;
+  return allOrders.filter(o => {
+    if (search) {
+      const inOrderNum = (o.orderNumber || "").toLowerCase().includes(search);
+      const inName = (o.customerName || "").toLowerCase().includes(search);
+      const inPhone = (o.phone || "").includes(search);
+      if (!inOrderNum && !inName && !inPhone) return false;
+    }
+    if (status && o.status !== status) return false;
+    if (from || to) {
+      const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+      if (from && d < new Date(from)) return false;
+      if (to) { const t = new Date(to); t.setHours(23,59,59); if (d > t) return false; }
+    }
+    return true;
+  });
+}
+function renderOrdersTable() {
+  const rows = getFilteredOrders();
+  const tbody = document.getElementById("ordersTableBody");
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">📭</div>لا توجد طلبات</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(o => {
+    const itemCount = (o.items || []).reduce((s, i) => s + i.quantity, 0);
+    return `<tr onclick="window.openOrderDetail('${o.id}')">
+      <td><strong>${o.orderNumber || o.id.slice(0,8)}</strong></td>
+      <td>${o.customerName || "—"}</td>
+      <td dir="ltr" style="text-align:right">${o.phone || "—"}</td>
+      <td style="font-size:12px">${formatDate(o.createdAt)}</td>
+      <td>${itemCount}</td>
+      <td><strong>${formatPrice(o.total)}</strong></td>
+      <td><span class="status-badge status-${o.status}">${STATUS_LABELS[o.status] || o.status}</span></td>
+      <td><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();window.openOrderDetail('${o.id}')">عرض</button></td>
+    </tr>`;
+  }).join("");
+}
+
+// ============ ORDER DETAIL ============
+window.openOrderDetail = function(id) {
+  const o = allOrders.find(x => x.id === id);
+  if (!o) return;
+  currentOrder = o;
+  const items = o.items || [];
+  const itemCount = items.reduce((s, i) => s + i.quantity, 0);
+  document.getElementById("orderDetailContent").innerHTML = `
+    <h2>📋 طلب ${o.orderNumber || o.id.slice(0,8)}</h2>
+
+    <div class="detail-section">
+      <h3>👤 بيانات العميل</h3>
+      <div class="detail-row"><span>الاسم:</span><span>${o.customerName}</span></div>
+      <div class="detail-row"><span>الهاتف:</span><span dir="ltr">${o.phone}</span></div>
+      ${o.alternativePhone ? `<div class="detail-row"><span>هاتف بديل:</span><span dir="ltr">${o.alternativePhone}</span></div>` : ""}
+      <div class="detail-row"><span>المحافظة:</span><span>${o.governorate}</span></div>
+      <div class="detail-row"><span>المدينة:</span><span>${o.city}</span></div>
+      <div class="detail-row"><span>العنوان:</span><span style="text-align:left;max-width:60%">${o.address}</span></div>
+      ${o.notes ? `<div class="detail-row"><span>ملاحظات العميل:</span><span style="text-align:left;max-width:60%">${o.notes}</span></div>` : ""}
+    </div>
+
+    <div class="detail-section">
+      <h3>🛍️ المنتجات (${itemCount} قطعة)</h3>
+      ${items.map(i => `
+        <div class="order-item-row">
+          <div class="order-item-img"><img src="${i.productImage || 'https://via.placeholder.com/60'}"></div>
+          <div class="order-item-info">
+            <div class="order-item-name">${i.productName}</div>
+            <div class="order-item-variant">${i.size} / ${i.color} × ${i.quantity}</div>
+          </div>
+          <div style="text-align:left;font-size:13px">
+            <div>${formatPrice(i.unitPrice)}</div>
+            <div style="font-weight:700;color:var(--accent)">${formatPrice(i.subtotal)}</div>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+
+    <div class="detail-section">
+      <h3>💰 ملخص الطلب</h3>
+      <div class="detail-row"><span>المجموع الفرعي:</span><span>${formatPrice(o.subtotal)}</span></div>
+      <div class="detail-row" style="font-size:18px;padding-top:10px;border-top:1px solid var(--border);margin-top:6px"><span style="color:var(--primary);font-weight:900">الإجمالي:</span><span style="color:var(--accent);font-weight:900">${formatPrice(o.total)}</span></div>
+      <div class="detail-row" style="margin-top:10px"><span>طريقة الدفع:</span><span>${o.paymentMethod === "cod" ? "الدفع عند الاستلام" : o.paymentMethod}</span></div>
+    </div>
+
+    <div class="detail-section">
+      <h3>🔄 تغيير الحالة</h3>
+      <select class="status-selector" id="newStatusSelect">
+        ${Object.entries(STATUS_LABELS).map(([k, v]) =>
+          `<option value="${k}" ${o.status === k ? "selected" : ""}>${v}</option>`).join("")}
+      </select>
+      <h3 style="margin-top:16px">📝 ملاحظات إدارية</h3>
+      <textarea class="notes-input" id="adminNotesInput" placeholder="ملاحظات داخلية...">${o.adminNotes || ""}</textarea>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-primary" style="flex:1;padding:12px" onclick="window.saveOrderChanges(event)">💾 حفظ التغييرات</button>
+        <button class="btn btn-secondary" onclick="window.closeOrderModal()">إلغاء</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("orderModal").classList.add("active");
+};
+window.closeOrderModal = () => document.getElementById("orderModal").classList.remove("active");
+
+window.saveOrderChanges = async (ev) => {
+  if (!currentOrder) return;
+  const newStatus = document.getElementById("newStatusSelect").value;
+  const adminNotes = document.getElementById("adminNotesInput").value;
+  const btn = ev.target;
+  btn.disabled = true; btn.textContent = "جاري الحفظ...";
+
+  try {
+    if (newStatus !== currentOrder.status) {
+      // إذا تم الإلغاء، نرجع المخزون
+      if (newStatus === "cancelled" && currentOrder.stockDeducted === true) {
+        for (const item of currentOrder.items) {
+          const pRef = doc(db, "products", item.productId);
+          await runTransaction(db, async (tx) => {
+            const pSnap = await tx.get(pRef);
+            if (!pSnap.exists()) return;
+            const p = pSnap.data();
+            const newVariants = p.variants.map(v => {
+              if (v.size === item.size && v.color === item.color) {
+                return { ...v, stock: v.stock + item.quantity };
+              }
+              return v;
+            });
+            tx.update(pRef, {
+              variants: newVariants,
+              totalStock: newVariants.reduce((s, v) => s + v.stock, 0),
+              updatedAt: serverTimestamp()
+            });
+          });
+        }
+        await updateDoc(doc(db, "orders", currentOrder.id), {
+          status: "cancelled", stockDeducted: false, adminNotes, updatedAt: serverTimestamp()
+        });
+      } else {
+        await updateDoc(doc(db, "orders", currentOrder.id), {
+          status: newStatus, adminNotes, updatedAt: serverTimestamp()
+        });
+      }
+    } else {
+      await updateDoc(doc(db, "orders", currentOrder.id), {
+        adminNotes, updatedAt: serverTimestamp()
+      });
+    }
+    toast("تم الحفظ بنجاح ✓", "success");
+    window.closeOrderModal();
+  } catch (err) {
+    console.error(err);
+    toast(err.message || "خطأ في الحفظ", "error");
+    btn.disabled = false; btn.textContent = "💾 حفظ التغييرات";
+  }
+};
+
+// ============ DEMAND ANALYSIS ============
+function populateDemandFilters() {
+  const products = new Set(), colors = new Set(), sizes = new Set();
+  allOrders.forEach(o => (o.items || []).forEach(i => {
+    if (i.productName) products.add(i.productName);
+    if (i.color) colors.add(i.color);
+    if (i.size) sizes.add(i.size);
+  }));
+  const pSel = document.getElementById("demandProduct");
+  const cSel = document.getElementById("demandColor");
+  const sSel = document.getElementById("demandSize");
+  const pVal = pSel.value, cVal = cSel.value, sVal = sSel.value;
+  pSel.innerHTML = '<option value="">الكل</option>' + [...products].sort().map(x => `<option>${x}</option>`).join("");
+  cSel.innerHTML = '<option value="">الكل</option>' + [...colors].sort().map(x => `<option>${x}</option>`).join("");
+  sSel.innerHTML = '<option value="">الكل</option>' + [...sizes].sort().map(x => `<option>${x}</option>`).join("");
+  pSel.value = pVal; cSel.value = cVal; sSel.value = sVal;
+}
+
+function renderDemandTable() {
+  const statusFilter = document.getElementById("demandStatus").value;
+  const productFilter = document.getElementById("demandProduct").value;
+  const colorFilter = document.getElementById("demandColor").value;
+  const sizeFilter = document.getElementById("demandSize").value;
+
+  let validOrders = allOrders;
+  if (statusFilter === "active") {
+    validOrders = allOrders.filter(o => o.status !== "cancelled");
+  } else if (statusFilter !== "all") {
+    validOrders = allOrders.filter(o => o.status === statusFilter);
+  }
+
+  const agg = {};
+  validOrders.forEach(o => (o.items || []).forEach(i => {
+    if (productFilter && i.productName !== productFilter) return;
+    if (colorFilter && i.color !== colorFilter) return;
+    if (sizeFilter && i.size !== sizeFilter) return;
+    const key = `${i.productName}|${i.color}|${i.size}`;
+    if (!agg[key]) {
+      agg[key] = { productName: i.productName, color: i.color, size: i.size, qty: 0, orderIds: new Set() };
+    }
+    agg[key].qty += i.quantity;
+    agg[key].orderIds.add(o.id);
+  }));
+
+  const rows = Object.values(agg).sort((a, b) => b.qty - a.qty);
+  const tbody = document.getElementById("demandTableBody");
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">📊</div>لا توجد بيانات</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${r.productName}</strong></td>
+      <td>${r.color}</td>
+      <td><span style="background:var(--border);padding:2px 10px;border-radius:6px;font-weight:700">${r.size}</span></td>
+      <td><strong style="color:var(--accent);font-size:16px">${r.qty}</strong> قطعة</td>
+      <td>${r.orderIds.size}</td>
+    </tr>
+  `).join("");
+}
+
+// ============ EVENTS ============
+document.getElementById("searchInput").addEventListener("input", renderOrdersTable);
+document.getElementById("statusFilter").addEventListener("change", renderOrdersTable);
+document.getElementById("dateFrom").addEventListener("change", renderOrdersTable);
+document.getElementById("dateTo").addEventListener("change", renderOrdersTable);
+document.getElementById("demandStatus").addEventListener("change", renderDemandTable);
+document.getElementById("demandProduct").addEventListener("change", renderDemandTable);
+document.getElementById("demandColor").addEventListener("change", renderDemandTable);
+document.getElementById("demandSize").addEventListener("change", renderDemandTable);
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    currentTab = tab.dataset.tab;
+    document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === tab));
+    document.getElementById("tab-orders").style.display = currentTab === "orders" ? "block" : "none";
+    document.getElementById("tab-demand").style.display = currentTab === "demand" ? "block" : "none";
+  });
+});
+</script>
+</body>
+</html>
