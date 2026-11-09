@@ -27,11 +27,14 @@ input,select{font-family:inherit;font-size:14px}
 .quick-filters{display:flex;gap:6px;flex-wrap:wrap}
 .quick-btn{padding:8px 14px;border-radius:8px;background:#fff;border:2px solid var(--border);font-size:12px;font-weight:700;cursor:pointer;color:var(--primary)}
 .quick-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+h2{font-size:20px;font-weight:900;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+h2 small{font-size:12px;color:var(--muted);font-weight:600}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
 .stat-card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);position:relative;overflow:hidden}
 .stat-card::before{content:'';position:absolute;top:0;right:0;width:4px;height:100%;background:var(--accent)}
 .stat-label{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px}
 .stat-value{font-size:24px;font-weight:900}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
 .stat-card.green::before{background:var(--success)}
 .stat-card.blue::before{background:var(--info)}
 .stat-card.orange::before{background:var(--warning)}
@@ -39,8 +42,10 @@ input,select{font-family:inherit;font-size:14px}
 .stat-card.red::before{background:var(--danger)}
 .chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;margin-bottom:24px}
 .chart-card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.chart-card h3{font-size:15px;margin-bottom:16px;font-weight:900}
-.chart-container{position:relative;height:280px}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px}
+.chart-header h3{font-size:15px;font-weight:900}
+.chart-header .summary-text{font-size:12px;font-weight:700;color:var(--accent);background:var(--bg);padding:4px 10px;border-radius:8px}
+.chart-container{position:relative;height:250px}
 .table-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:20px}
 .table-card h3{padding:18px 20px;font-size:16px;font-weight:900;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .table-card table{width:100%;border-collapse:collapse;font-size:14px}
@@ -58,6 +63,9 @@ input,select{font-family:inherit;font-size:14px}
 .toast-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:500;display:flex;flex-direction:column;gap:10px;align-items:center}
 .toast{background:var(--primary);color:#fff;padding:12px 24px;border-radius:12px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15);max-width:90vw}
 .toast.success{background:var(--success)}.toast.error{background:var(--danger)}
+.type-badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;display:inline-block}
+.type-order{background:#e0f7fa;color:#006064}
+.type-instant{background:#e8f5e9;color:#1b5e20}
 </style>
 </head>
 <body>
@@ -75,8 +83,7 @@ input,select{font-family:inherit;font-size:14px}
 <div class="container">
   <div id="authLoading" class="loading"><div class="spinner"></div>جاري التحقق...</div>
   <div id="mainContent" style="display:none">
-    <h2 style="margin-bottom:20px;font-size:22px">📊 تقارير المبيعات والمخزون</h2>
-
+    
     <div class="date-filters">
       <div>
         <label>الفترة السريعة</label>
@@ -97,20 +104,62 @@ input,select{font-family:inherit;font-size:14px}
       </div>
     </div>
 
-    <div class="stats-grid" id="statsGrid"></div>
+    <!-- التقارير الإجمالية -->
+    <h2>📈 نظرة عامة على الأداء <small>(الطلبات غير الملغية)</small></h2>
+    <div class="stats-grid" id="statsGridMain"></div>
 
+    <!-- تقارير تفصيلية للحالات -->
+    <h2>📋 تفاصيل الطلبات</h2>
+    <div class="stats-grid" id="statsGridStatus"></div>
+
+    <!-- الرسوم البيانية -->
     <div class="chart-grid">
-      <div class="chart-card"><h3>📈 المبيعات خلال الفترة</h3><div class="chart-container"><canvas id="salesChart"></canvas></div></div>
-      <div class="chart-card"><h3>📊 الطلبات حسب الحالة</h3><div class="chart-container"><canvas id="statusChart"></canvas></div></div>
-      <div class="chart-card"><h3>🏆 أفضل المنتجات مبيعاً</h3><div class="chart-container"><canvas id="bestSellersChart"></canvas></div></div>
-      <div class="chart-card"><h3>📏 المقاسات الأكثر طلباً</h3><div class="chart-container"><canvas id="sizesChart"></canvas></div></div>
-      <div class="chart-card"><h3>🎨 الألوان الأكثر طلباً</h3><div class="chart-container"><canvas id="colorsChart"></canvas></div></div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>📊 المبيعات اليومية</h3>
+          <span class="summary-text" id="summarySales">الإجمالي: 0 ج.م</span>
+        </div>
+        <div class="chart-container"><canvas id="salesChart"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>🛍️ توزيع الطلبات حسب النوع</h3>
+          <span class="summary-text" id="summaryType">مخزن: 0 | أوردر: 0</span>
+        </div>
+        <div class="chart-container"><canvas id="typeChart"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>🏆 أفضل 5 منتجات مبيعاً</h3>
+          <span class="summary-text" id="summaryBest">القطع: 0</span>
+        </div>
+        <div class="chart-container"><canvas id="bestSellersChart"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>📏 المقاسات الأكثر طلباً</h3>
+          <span class="summary-text" id="summarySizes">القطع: 0</span>
+        </div>
+        <div class="chart-container"><canvas id="sizesChart"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>🎨 الألوان الأكثر طلباً</h3>
+          <span class="summary-text" id="summaryColors">القطع: 0</span>
+        </div>
+        <div class="chart-container"><canvas id="colorsChart"></canvas></div>
+      </div>
     </div>
 
+    <!-- جداول التقارير -->
     <div class="table-card">
-      <h3>🏆 أفضل المنتجات <button class="btn btn-primary" onclick="window.exportCSV('bestSellers')">📥 CSV</button></h3>
+      <h3>🏆 تفاصيل أفضل المنتجات <button class="btn btn-primary" onclick="window.exportCSV()">📥 تصدير CSV</button></h3>
       <table>
-        <thead><tr><th>#</th><th>المنتج</th><th>القطع المباعة</th><th>الإيرادات</th></tr></thead>
+        <thead><tr><th>#</th><th>المنتج</th><th>النوع</th><th>القطع المباعة</th><th>الإيرادات</th></tr></thead>
         <tbody id="bestSellersTable"></tbody>
       </table>
     </div>
@@ -147,8 +196,9 @@ function toast(msg, type="info") {
   setTimeout(() => el.remove(), 3200);
 }
 function formatPrice(n) { return Number(n || 0).toFixed(2) + " ج.م"; }
+function formatNumber(n) { return Number(n || 0).toLocaleString("ar-EG"); }
 
-// ============ AUTH (Firestore check) ============
+// ============ AUTH ============
 async function isAdminUser(uid) {
   try {
     const snap = await getDoc(doc(db, "admins", uid));
@@ -220,164 +270,227 @@ function applyDateRange() {
       return d <= t;
     });
   }
-  renderStats(filtered);
+  
+  renderStatsMain(filtered);
+  renderStatsStatus(filtered);
   renderCharts(filtered);
   renderBestSellersTable(filtered);
 }
 
-function renderStats(orders) {
+// ============ STATS ============
+function renderStatsMain(orders) {
   const active = orders.filter(o => o.status !== "cancelled");
   const revenue = active.reduce((s, o) => s + (o.total || 0), 0);
-  const totalOrders = orders.length;
   const itemsSold = active.reduce((s, o) => s + (o.items || []).reduce((x, i) => x + i.quantity, 0), 0);
   const avgOrder = active.length > 0 ? revenue / active.length : 0;
-  document.getElementById("statsGrid").innerHTML = `
-    <div class="stat-card green"><div class="stat-label">إجمالي الإيرادات</div><div class="stat-value">${formatPrice(revenue)}</div></div>
-    <div class="stat-card blue"><div class="stat-label">عدد الطلبات</div><div class="stat-value">${totalOrders}</div></div>
-    <div class="stat-card orange"><div class="stat-label">متوسط قيمة الطلب</div><div class="stat-value">${formatPrice(avgOrder)}</div></div>
-    <div class="stat-card purple"><div class="stat-label">القطع المباعة</div><div class="stat-value">${itemsSold}</div></div>
+
+  document.getElementById("statsGridMain").innerHTML = `
+    <div class="stat-card green">
+      <div class="stat-label">إجمالي المبيعات</div>
+      <div class="stat-value">${formatPrice(revenue)}</div>
+      <div class="stat-sub">الطلبات النشطة فقط</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">الطلبات النشطة</div>
+      <div class="stat-value">${formatNumber(active.length)} طلب</div>
+      <div class="stat-sub">من أصل ${formatNumber(orders.length)} طلب</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">القطع المباعة</div>
+      <div class="stat-value">${formatNumber(itemsSold)} قطعة</div>
+      <div class="stat-sub">إجمالي المنتجات المطلوبة</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-label">متوسط قيمة الطلب</div>
+      <div class="stat-value">${formatPrice(avgOrder)}</div>
+      <div class="stat-sub">مبيعات ÷ طلبات نشطة</div>
+    </div>
   `;
 }
 
+function renderStatsStatus(orders) {
+  const newOrders = orders.filter(o => o.status === "new").length;
+  const delivered = orders.filter(o => o.status === "delivered").length;
+  const cancelled = orders.filter(o => o.status === "cancelled").length;
+  
+  document.getElementById("statsGridStatus").innerHTML = `
+    <div class="stat-card blue">
+      <div class="stat-label">طلبات جديدة (تحتاج متابعة)</div>
+      <div class="stat-value">${formatNumber(newOrders)} طلب</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">طلبات تم توصيلها</div>
+      <div class="stat-value">${formatNumber(delivered)} طلب</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">طلبات ملغاة</div>
+      <div class="stat-value">${formatNumber(cancelled)} طلب</div>
+    </div>
+  `;
+}
+
+// ============ CHARTS ============
 function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[key] = null; } }
+
 function renderCharts(orders) {
+  const activeOrders = orders.filter(o => o.status !== "cancelled");
+
+  // 1. Sales Over Time
   const salesByDay = {};
-  orders.filter(o => o.status !== "cancelled").forEach(o => {
+  activeOrders.forEach(o => {
     const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
     const k = d.toISOString().slice(0,10);
     salesByDay[k] = (salesByDay[k] || 0) + (o.total || 0);
   });
   const days = Object.keys(salesByDay).sort();
+  const totalSalesInChart = days.reduce((s, d) => s + salesByDay[d], 0);
+  document.getElementById("summarySales").textContent = `الإجمالي: ${formatPrice(totalSalesInChart)}`;
+
   destroyChart("sales");
   charts.sales = new Chart(document.getElementById("salesChart"), {
     type: "line",
     data: { labels: days.map(d => new Date(d).toLocaleDateString("ar-EG")), datasets: [{
-      label: "المبيعات (ج.م)", data: days.map(d => salesByDay[d]),
-      borderColor: "#e94560", backgroundColor: "rgba(233,69,96,0.1)",
+      label: "المبيعات", data: days.map(d => salesByDay[d]),
+      borderColor: "#28a745", backgroundColor: "rgba(40,167,69,0.1)",
       fill: true, tension: 0.3
     }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
   });
 
-  const statusCounts = { new:0, confirmed:0, preparing:0, shipped:0, delivered:0, cancelled:0 };
-  orders.forEach(o => { if (statusCounts[o.status] !== undefined) statusCounts[o.status]++; });
-  destroyChart("status");
-  charts.status = new Chart(document.getElementById("statusChart"), {
+  // 2. Order Type (Instant vs Order)
+  let instantQty = 0, orderQty = 0;
+  activeOrders.forEach(o => (o.items || []).forEach(i => {
+    if (i.type === "order") orderQty += i.quantity;
+    else instantQty += i.quantity;
+  }));
+  document.getElementById("summaryType").textContent = `مخزن: ${formatNumber(instantQty)} | أوردر: ${formatNumber(orderQty)}`;
+
+  destroyChart("type");
+  charts.type = new Chart(document.getElementById("typeChart"), {
     type: "doughnut",
     data: {
-      labels: ["جديد","مؤكد","قيد التجهيز","تم الشحن","تم التوصيل","ملغي"],
-      datasets: [{ data: Object.values(statusCounts),
-        backgroundColor: ["#cfe2ff","#d1e7dd","#fff3cd","#cff4fc","#28a745","#dc3545"] }]
+      labels: ["متاح بالمخزن", "يصنع بالأوردر"],
+      datasets: [{ data: [instantQty, orderQty], backgroundColor: ["#17a2b8", "#6f42c1"] }]
     },
     options: { responsive: true, maintainAspectRatio: false }
   });
 
+  // 3. Best Sellers (Top 5)
   const productSales = {};
-  orders.filter(o => o.status !== "cancelled").forEach(o => (o.items || []).forEach(i => {
+  activeOrders.forEach(o => (o.items || []).forEach(i => {
     productSales[i.productName] = (productSales[i.productName] || 0) + i.quantity;
   }));
-  const topProducts = Object.entries(productSales).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  const topProducts = Object.entries(productSales).sort((a,b) => b[1] - a[1]).slice(0, 5);
+  const totalTopQty = topProducts.reduce((s, p) => s + p[1], 0);
+  document.getElementById("summaryBest").textContent = `القطع: ${formatNumber(totalTopQty)}`;
+
   destroyChart("bestSellers");
   charts.bestSellers = new Chart(document.getElementById("bestSellersChart"), {
     type: "bar",
     data: {
       labels: topProducts.map(p => p[0]),
-      datasets: [{ label: "قطع", data: topProducts.map(p => p[1]),
-        backgroundColor: "#1a1a2e" }]
+      datasets: [{ data: topProducts.map(p => p[1]), backgroundColor: "#1a1a2e" }]
     },
-    options: { responsive: true, maintainAspectRatio: false, indexAxis: "y",
-      plugins: { legend: { display: false } } }
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: "y", plugins: { legend: { display: false } } }
   });
 
+  // 4. Sizes
   const sizeSales = {};
-  orders.filter(o => o.status !== "cancelled").forEach(o => (o.items || []).forEach(i => {
+  activeOrders.forEach(o => (o.items || []).forEach(i => {
     sizeSales[i.size] = (sizeSales[i.size] || 0) + i.quantity;
   }));
+  const totalSizesQty = Object.values(sizeSales).reduce((s, v) => s + v, 0);
+  document.getElementById("summarySizes").textContent = `القطع: ${formatNumber(totalSizesQty)}`;
+
   destroyChart("sizes");
   charts.sizes = new Chart(document.getElementById("sizesChart"), {
     type: "bar",
     data: {
       labels: Object.keys(sizeSales),
-      datasets: [{ label: "قطع", data: Object.values(sizeSales),
-        backgroundColor: "#17a2b8" }]
+      datasets: [{ data: Object.values(sizeSales), backgroundColor: "#ffc107" }]
     },
-    options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } } }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
   });
 
+  // 5. Colors
   const colorSales = {};
-  orders.filter(o => o.status !== "cancelled").forEach(o => (o.items || []).forEach(i => {
+  activeOrders.forEach(o => (o.items || []).forEach(i => {
     colorSales[i.color] = (colorSales[i.color] || 0) + i.quantity;
   }));
+  const totalColorsQty = Object.values(colorSales).reduce((s, v) => s + v, 0);
+  document.getElementById("summaryColors").textContent = `القطع: ${formatNumber(totalColorsQty)}`;
+
   destroyChart("colors");
   charts.colors = new Chart(document.getElementById("colorsChart"), {
     type: "pie",
     data: {
       labels: Object.keys(colorSales),
-      datasets: [{ data: Object.values(colorSales),
-        backgroundColor: ["#e94560","#1a1a2e","#17a2b8","#ffc107","#6f42c1","#28a745","#fd7e14","#6c757d"] }]
+      datasets: [{ data: Object.values(colorSales), backgroundColor: ["#e94560","#1a1a2e","#17a2b8","#ffc107","#6f42c1","#28a745","#fd7e14","#6c757d"] }]
     },
     options: { responsive: true, maintainAspectRatio: false }
   });
 }
 
+// ============ BEST SELLERS TABLE ============
 function renderBestSellersTable(orders) {
   const productStats = {};
   orders.filter(o => o.status !== "cancelled").forEach(o => (o.items || []).forEach(i => {
-    if (!productStats[i.productName]) {
-      productStats[i.productName] = { qty: 0, revenue: 0 };
+    const key = i.productName;
+    if (!productStats[key]) {
+      productStats[key] = { qty: 0, revenue: 0, type: i.type };
     }
-    productStats[i.productName].qty += i.quantity;
-    productStats[i.productName].revenue += i.subtotal;
+    productStats[key].qty += i.quantity;
+    productStats[key].revenue += i.subtotal;
   }));
+  
   bestSellersData = Object.entries(productStats)
-    .map(([name, s]) => ({ name, qty: s.qty, revenue: s.revenue }))
+    .map(([name, s]) => ({ name, qty: s.qty, revenue: s.revenue, type: s.type }))
     .sort((a,b) => b.qty - a.qty);
+
   const tbody = document.getElementById("bestSellersTable");
   if (!bestSellersData.length) {
-    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">لا توجد بيانات</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">لا توجد بيانات</div></td></tr>';
     return;
   }
   tbody.innerHTML = bestSellersData.map((p, i) => `
     <tr>
       <td>${i+1}</td>
       <td><strong>${p.name}</strong></td>
-      <td>${p.qty}</td>
+      <td>${p.type === "order" ? '<span class="type-badge type-order">أوردر</span>' : '<span class="type-badge type-instant">مخزن</span>'}</td>
+      <td>${formatNumber(p.qty)}</td>
       <td>${formatPrice(p.revenue)}</td>
     </tr>
   `).join("");
 }
 
 function renderLowStock() {
-  const low = allProducts.filter(p => p.status === "active" && (p.totalStock || 0) < 10)
+  const low = allProducts.filter(p => p.status === "active" && p.type !== "order" && (p.totalStock || 0) < 10)
     .sort((a,b) => (a.totalStock || 0) - (b.totalStock || 0));
   const tbody = document.getElementById("lowStockTable");
   if (!low.length) {
-    tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">جميع المنتجات بمخزون جيد ✅</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">جميع المنتجات الفورية لديها مخزون جيد ✅</div></td></tr>';
     return;
   }
   tbody.innerHTML = low.map(p => {
     const s = p.totalStock || 0;
     return `<tr>
       <td><strong>${p.name}</strong></td>
-      <td><span style="color:${s === 0 ? '#dc3545' : '#ffc107'};font-weight:700">${s} قطعة</span></td>
+      <td><span style="color:${s === 0 ? '#dc3545' : '#ffc107'};font-weight:700">${formatNumber(s)} قطعة</span></td>
       <td>${s === 0 ? "❌ نفذت" : "⚠️ منخفض"}</td>
     </tr>`;
   }).join("");
 }
 
-window.exportCSV = (type) => {
-  let rows = [], filename = "";
-  if (type === "bestSellers") {
-    filename = "best-sellers.csv";
-    rows = [["#","المنتج","الكمية المباعة","الإيرادات"]];
-    bestSellersData.forEach((p, i) => rows.push([i+1, p.name, p.qty, p.revenue.toFixed(2)]));
-  }
+window.exportCSV = () => {
+  let rows = [["#","المنتج","النوع","الكمية المباعة","الإيرادات"]];
+  bestSellersData.forEach((p, i) => {
+    rows.push([i+1, p.name, p.type === "order" ? "أوردر" : "مخزن", p.qty, p.revenue.toFixed(2)]);
+  });
   const csv = "\uFEFF" + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = filename;
+  link.download = "best-sellers.csv";
   link.click();
   toast("تم تصدير الملف ✓", "success");
 };
