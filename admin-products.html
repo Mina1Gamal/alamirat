@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -136,11 +135,44 @@ tbody tr:hover{background:#f8f9fa}
     <h2 id="modalTitle">➕ إضافة منتج جديد</h2>
     <form id="productForm">
       <input type="hidden" id="productId">
+      
       <div class="form-row">
         <div class="form-group"><label>اسم المنتج *</label><input id="pName" required></div>
-        <div class="form-group"><label>الفئة *</label><input id="pCategory" required placeholder="رجالي / نسائي..."></div>
+        <div class="form-group">
+          <label>نوع القسم *</label>
+          <select id="pCategoryType" required>
+            <option value="تيشيرت">تيشيرت</option>
+            <option value="قميص">قميص</option>
+            <option value="بنطالون">بنطالون</option>
+            <option value="جاكيت">جاكيت</option>
+            <option value="شرابات">شرابات</option>
+            <option value="حذاء">حذاء</option>
+            <option value="إكسسوارات">إكسسوارات</option>
+          </select>
+        </div>
       </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>الفئة *</label>
+          <select id="pCategory" required>
+            <option value="رجالي">رجالي</option>
+            <option value="حريمي">حريمي</option>
+            <option value="اطفالي">اطفالي</option>
+            <option value="عام">عام</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>حالة توفر المنتج *</label>
+          <select id="pType" onchange="window.toggleVariantMatrix()">
+            <option value="instant">فوري (كمية متوفرة بالمخزن)</option>
+            <option value="order">أوردر (يُطلب من المصنع)</option>
+          </select>
+        </div>
+      </div>
+
       <div class="form-group"><label>الوصف</label><textarea id="pDescription"></textarea></div>
+      
       <div class="form-row">
         <div class="form-group"><label>السعر الأساسي *</label><input type="number" id="pPrice" min="0" step="0.01" required></div>
         <div class="form-group"><label>سعر بعد الخصم (اختياري)</label><input type="number" id="pDiscountPrice" min="0" step="0.01"></div>
@@ -160,15 +192,16 @@ tbody tr:hover{background:#f8f9fa}
       <div class="form-row">
         <div class="form-group">
           <label>المقاسات المتاحة *</label>
-          <div class="chip-input" id="sizesChip"><input id="sizeInput" placeholder="اكتب ثم Enter"><span style="font-size:11px;color:#999">Enter للإضافة</span></div>
+          <div class="chip-input" id="sizesChip"></div>
         </div>
         <div class="form-group">
           <label>الألوان المتاحة *</label>
-          <div class="chip-input" id="colorsChip"><input id="colorInput" placeholder="اكتب ثم Enter"><span style="font-size:11px;color:#999">Enter للإضافة</span></div>
+          <div class="chip-input" id="colorsChip"></div>
         </div>
       </div>
 
-      <div class="form-group">
+      <!-- مصفوفة المخزون تظهر فقط عند اختيار "فوري" -->
+      <div class="form-group" id="matrixContainer">
         <label>مصفوفة المخزون (حسب المقاس × اللون)</label>
         <div class="variant-matrix" id="variantMatrix"><p style="color:#999">أضف مقاسات وألوان أولاً</p></div>
         <div class="total-stock-row"><span>📊 إجمالي المخزون:</span><span id="totalStockDisplay">0</span></div>
@@ -176,14 +209,14 @@ tbody tr:hover{background:#f8f9fa}
 
       <div class="form-row">
         <div class="form-group">
-          <label>حالة المنتج</label>
+          <label>حالة المنتج (نشط/مخفي)</label>
           <select id="pStatus">
-            <option value="active">نشط</option>
-            <option value="inactive">غير نشط</option>
+            <option value="active">نشط (يظهر للمتسوقين)</option>
+            <option value="inactive">غير نشط (مخفي)</option>
           </select>
         </div>
         <div class="form-group">
-          <label>منتج مميز</label>
+          <label>منتج مميز (يظهر أولاً)</label>
           <select id="pFeatured">
             <option value="false">لا</option>
             <option value="true">نعم</option>
@@ -271,13 +304,25 @@ function renderProductsTable() {
   }
   tbody.innerHTML = allProducts.map(p => {
     const stock = p.totalStock || 0;
-    const stockClass = stock === 0 ? "stock-out" : stock < 10 ? "stock-low" : "stock-ok";
+    const stockClass = stock === 0 && p.type === 'instant' ? "stock-out" : stock < 10 && p.type === 'instant' ? "stock-low" : "stock-ok";
+    
+    // عرض المخزون أو كلمة "أوردر" حسب نوع المنتج
+    let stockDisplay = "";
+    if (p.type === "order") {
+      stockDisplay = `<span class="stock-badge" style="color:var(--info)">حسب الطلب</span>`;
+    } else {
+      stockDisplay = `<span class="stock-badge ${stockClass}">${stock}</span>`;
+    }
+
     return `<tr>
       <td><div class="product-thumb"><img src="${(p.images || [])[0] || 'https://via.placeholder.com/52'}"></div></td>
-      <td><strong>${p.name}</strong>${p.featured ? ' <span style="color:var(--warning)">⭐</span>' : ''}</td>
+      <td>
+        <strong>${p.name}</strong>${p.featured ? ' <span style="color:var(--warning)">⭐</span>' : ''}<br>
+        <small style="color:var(--muted);font-size:11px">${p.categoryType || 'غير محدد'} - ${p.category}</small>
+      </td>
       <td>${p.category || "—"}</td>
       <td><strong>${formatPrice(p.discountPrice || p.price)}</strong>${p.discountPrice ? `<br><small style="color:#999;text-decoration:line-through">${formatPrice(p.price)}</small>` : ''}</td>
-      <td><span class="stock-badge ${stockClass}">${stock}</span></td>
+      <td>${stockDisplay}</td>
       <td><span class="status-pill status-${p.status}">${p.status === "active" ? "نشط" : "غير نشط"}</span></td>
       <td>
         <div class="actions-cell">
@@ -301,7 +346,9 @@ function openProductModal(product = null) {
   document.getElementById("modalTitle").textContent = product ? "✏️ تعديل منتج" : "➕ إضافة منتج جديد";
   document.getElementById("productId").value = product?.id || "";
   document.getElementById("pName").value = product?.name || "";
-  document.getElementById("pCategory").value = product?.category || "";
+  document.getElementById("pCategoryType").value = product?.categoryType || "تيشيرت";
+  document.getElementById("pCategory").value = product?.category || "رجالي";
+  document.getElementById("pType").value = product?.type || "instant";
   document.getElementById("pDescription").value = product?.description || "";
   document.getElementById("pPrice").value = product?.price || "";
   document.getElementById("pDiscountPrice").value = product?.discountPrice || "";
@@ -320,9 +367,20 @@ function openProductModal(product = null) {
 
   renderChips();
   renderImagePreviews();
-  renderVariantMatrix();
+  window.toggleVariantMatrix();
   document.getElementById("productModal").classList.add("active");
 }
+
+window.toggleVariantMatrix = () => {
+  const type = document.getElementById("pType").value;
+  const matrixContainer = document.getElementById("matrixContainer");
+  if (type === "instant") {
+    matrixContainer.style.display = "block";
+    renderVariantMatrix();
+  } else {
+    matrixContainer.style.display = "none";
+  }
+};
 
 window.editProduct = (id) => {
   const p = allProducts.find(x => x.id === id);
@@ -406,7 +464,7 @@ window.removeImage = (i) => {
   renderImagePreviews();
 };
 
-// ============ CHIPS (Sizes/Colors) ============
+// ============ CHIPS (Sizes/Colors) مع دعم الهاتف ============
 function renderChips() {
   const sBox = document.getElementById("sizesChip");
   const cBox = document.getElementById("colorsChip");
@@ -436,7 +494,6 @@ function renderChips() {
   });
 }
 
-// دوال الإضافة الجديدة
 window.addSizeChip = () => {
   const inp = document.getElementById("sizeInput");
   if (!inp) return;
@@ -446,7 +503,7 @@ window.addSizeChip = () => {
     renderChips();
     renderVariantMatrix();
   } else if (v) {
-    inp.value = ""; // مسح الحقل لو مكرر
+    inp.value = "";
   }
   document.getElementById("sizeInput")?.focus();
 };
@@ -460,16 +517,22 @@ window.addColorChip = () => {
     renderChips();
     renderVariantMatrix();
   } else if (v) {
-    inp.value = ""; // مسح الحقل لو مكرر
+    inp.value = "";
   }
   document.getElementById("colorInput")?.focus();
 };
 
 window.removeSize = (i) => { currentSizes.splice(i, 1); renderChips(); renderVariantMatrix(); };
 window.removeColor = (i) => { currentColors.splice(i, 1); renderChips(); renderVariantMatrix(); };
+
 // ============ VARIANT MATRIX ============
 function renderVariantMatrix() {
   const box = document.getElementById("variantMatrix");
+  const type = document.getElementById("pType").value;
+  
+  // إذا كان النوع "أوردر"، لا داعي لرسم المصفوفة
+  if (type === "order") return;
+
   if (!currentSizes.length || !currentColors.length) {
     box.innerHTML = '<p style="color:#999">أضف مقاسات وألوان أولاً</p>';
     document.getElementById("totalStockDisplay").textContent = "0";
@@ -507,24 +570,41 @@ document.getElementById("productForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = document.getElementById("productId").value;
   const name = document.getElementById("pName").value.trim();
-  const category = document.getElementById("pCategory").value.trim();
+  const category = document.getElementById("pCategory").value;
+  const categoryType = document.getElementById("pCategoryType").value;
+  const type = document.getElementById("pType").value;
   const price = parseFloat(document.getElementById("pPrice").value);
   const discountPrice = document.getElementById("pDiscountPrice").value ? parseFloat(document.getElementById("pDiscountPrice").value) : null;
 
-  if (!name || !category) { toast("الاسم والفئة مطلوبان", "error"); return; }
+  if (!name) { toast("اسم المنتج مطلوب", "error"); return; }
   if (!price || price <= 0) { toast("السعر غير صالح", "error"); return; }
   if (discountPrice && discountPrice >= price) { toast("سعر الخصم يجب أن يكون أقل من السعر الأساسي", "error"); return; }
   if (!currentSizes.length) { toast("أضف مقاساً واحداً على الأقل", "error"); return; }
   if (!currentColors.length) { toast("أضف لوناً واحداً على الأقل", "error"); return; }
 
   const variants = [];
-  currentSizes.forEach(s => currentColors.forEach(c => {
-    variants.push({ size: s, color: c, stock: variantStocks[`${s}|${c}`] || 0 });
-  }));
-  const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
+  let totalStock = 0;
+
+  if (type === "instant") {
+    currentSizes.forEach(s => currentColors.forEach(c => {
+      const st = variantStocks[`${s}|${c}`] || 0;
+      variants.push({ size: s, color: c, stock: st });
+      totalStock += st;
+    }));
+  } else {
+    // في حالة الأوردر، نحفظ المتغيرات بكمية صفرية
+    currentSizes.forEach(s => currentColors.forEach(c => {
+      variants.push({ size: s, color: c, stock: 0 });
+    }));
+    totalStock = 0;
+  }
+
   const mainImageIndex = currentImages.findIndex(i => i.isMain);
   const data = {
-    name, category,
+    name, 
+    category, 
+    categoryType, 
+    type,
     description: document.getElementById("pDescription").value.trim(),
     price,
     discountPrice,
@@ -538,6 +618,7 @@ document.getElementById("productForm").addEventListener("submit", async (e) => {
     featured: document.getElementById("pFeatured").value === "true",
     updatedAt: serverTimestamp()
   };
+  
   const btn = document.getElementById("saveProductBtn");
   btn.disabled = true; btn.textContent = "جاري الحفظ...";
   try {
