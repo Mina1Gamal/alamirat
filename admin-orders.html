@@ -88,6 +88,9 @@ tbody tr:hover{background:#f8f9fa;cursor:pointer}
 .tab.active{background:var(--accent);color:#fff}
 .demand-card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:20px}
 .demand-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.type-badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;display:inline-block;margin-right:4px}
+.type-order{background:#e0f7fa;color:#006064}
+.type-instant{background:#e8f5e9;color:#1b5e20}
 </style>
 </head>
 <body>
@@ -120,11 +123,16 @@ tbody tr:hover{background:#f8f9fa;cursor:pointer}
           <select id="statusFilter">
             <option value="">الكل</option>
             <option value="new">جديد</option>
-            <option value="confirmed">مؤكد</option>
-            <option value="preparing">قيد التجهيز</option>
-            <option value="shipped">تم الشحن</option>
             <option value="delivered">تم التوصيل</option>
             <option value="cancelled">ملغي</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>نوع الطلب</label>
+          <select id="typeFilter">
+            <option value="all">كل الطلبات</option>
+            <option value="order">أوردر فقط</option>
+            <option value="instant">مخزن فقط</option>
           </select>
         </div>
         <div class="filter-group"><label>من تاريخ</label><input type="date" id="dateFrom"></div>
@@ -163,9 +171,7 @@ tbody tr:hover{background:#f8f9fa;cursor:pointer}
             <select id="demandStatus">
               <option value="active">الطلبات النشطة (غير ملغاة)</option>
               <option value="new">جديد فقط</option>
-              <option value="confirmed">مؤكد فقط</option>
-              <option value="preparing">قيد التجهيز</option>
-              <option value="shipped">تم الشحن</option>
+              <option value="delivered">تم التوصيل</option>
               <option value="all">كل الطلبات</option>
             </select>
           </div>
@@ -211,8 +217,9 @@ let currentTab = "orders";
 let currentOrder = null;
 
 const STATUS_LABELS = {
-  new: "جديد", confirmed: "مؤكد", preparing: "قيد التجهيز",
-  shipped: "تم الشحن", delivered: "تم التوصيل", cancelled: "ملغي"
+  new: "جديد", 
+  delivered: "تم التوصيل", 
+  cancelled: "ملغي"
 };
 
 function toast(msg, type="info") {
@@ -230,7 +237,7 @@ function formatDate(ts) {
     + " " + d.toLocaleTimeString("ar-EG", { hour:"2-digit", minute:"2-digit" });
 }
 
-// ============ AUTH (Firestore check) ============
+// ============ AUTH ============
 async function isAdminUser(uid) {
   try {
     const snap = await getDoc(doc(db, "admins", uid));
@@ -245,6 +252,10 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "admin-login.html"; return; }
   const ok = await isAdminUser(user.uid);
   if (!ok) { await signOut(auth); window.location.href = "admin-login.html"; return; }
+  
+  // ✅ ضبط الفلتر على "جديد" قبل تحميل البيانات
+  document.getElementById("statusFilter").value = "new";
+  
   document.getElementById("authLoading").style.display = "none";
   document.getElementById("mainContent").style.display = "block";
   loadOrders();
@@ -282,8 +293,7 @@ function renderStats() {
   document.getElementById("statsGrid").innerHTML = `
     <div class="stat-card blue"><div class="stat-label">إجمالي الطلبات</div><div class="stat-value">${total}</div></div>
     <div class="stat-card orange"><div class="stat-label">جديدة</div><div class="stat-value">${countByStatus("new")}</div></div>
-    <div class="stat-card green"><div class="stat-label">مؤكدة</div><div class="stat-value">${countByStatus("confirmed")}</div></div>
-    <div class="stat-card purple"><div class="stat-label">تم التوصيل</div><div class="stat-value">${countByStatus("delivered")}</div></div>
+    <div class="stat-card green"><div class="stat-label">تم التوصيل</div><div class="stat-value">${countByStatus("delivered")}</div></div>
     <div class="stat-card red"><div class="stat-label">ملغاة</div><div class="stat-value">${countByStatus("cancelled")}</div></div>
     <div class="stat-card green"><div class="stat-label">إجمالي المبيعات</div><div class="stat-value">${formatPrice(totalSales)}</div></div>
     <div class="stat-card blue"><div class="stat-label">القطع المباعة</div><div class="stat-value">${totalItems}</div></div>
@@ -294,8 +304,10 @@ function renderStats() {
 function getFilteredOrders() {
   const search = document.getElementById("searchInput").value.trim().toLowerCase();
   const status = document.getElementById("statusFilter").value;
+  const typeFilter = document.getElementById("typeFilter").value;
   const from = document.getElementById("dateFrom").value;
   const to = document.getElementById("dateTo").value;
+  
   return allOrders.filter(o => {
     if (search) {
       const inOrderNum = (o.orderNumber || "").toLowerCase().includes(search);
@@ -304,6 +316,15 @@ function getFilteredOrders() {
       if (!inOrderNum && !inName && !inPhone) return false;
     }
     if (status && o.status !== status) return false;
+    
+    // فلتر نوع الطلب
+    if (typeFilter !== "all") {
+      const hasOrderItem = (o.items || []).some(i => i.type === "order");
+      const hasInstantItem = (o.items || []).some(i => i.type !== "order");
+      if (typeFilter === "order" && !hasOrderItem) return false;
+      if (typeFilter === "instant" && !hasInstantItem) return false;
+    }
+
     if (from || to) {
       const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
       if (from && d < new Date(from)) return false;
@@ -312,6 +333,7 @@ function getFilteredOrders() {
     return true;
   });
 }
+
 function renderOrdersTable() {
   const rows = getFilteredOrders();
   const tbody = document.getElementById("ordersTableBody");
@@ -341,6 +363,7 @@ window.openOrderDetail = function(id) {
   currentOrder = o;
   const items = o.items || [];
   const itemCount = items.reduce((s, i) => s + i.quantity, 0);
+  
   document.getElementById("orderDetailContent").innerHTML = `
     <h2>📋 طلب ${o.orderNumber || o.id.slice(0,8)}</h2>
 
@@ -361,7 +384,10 @@ window.openOrderDetail = function(id) {
         <div class="order-item-row">
           <div class="order-item-img"><img src="${i.productImage || 'https://via.placeholder.com/60'}"></div>
           <div class="order-item-info">
-            <div class="order-item-name">${i.productName}</div>
+            <div class="order-item-name">
+              ${i.productName}
+              ${i.type === "order" ? '<span class="type-badge type-order">أوردر</span>' : '<span class="type-badge type-instant">مخزن</span>'}
+            </div>
             <div class="order-item-variant">${i.size} / ${i.color} × ${i.quantity}</div>
           </div>
           <div style="text-align:left;font-size:13px">
@@ -395,6 +421,7 @@ window.openOrderDetail = function(id) {
   `;
   document.getElementById("orderModal").classList.add("active");
 };
+
 window.closeOrderModal = () => document.getElementById("orderModal").classList.remove("active");
 
 window.saveOrderChanges = async (ev) => {
@@ -406,9 +433,11 @@ window.saveOrderChanges = async (ev) => {
 
   try {
     if (newStatus !== currentOrder.status) {
-      // إذا تم الإلغاء، نرجع المخزون
+      // إذا تم الإلغاء، نرجع المخزون (فقط للمنتجات التي ليست أوردر)
       if (newStatus === "cancelled" && currentOrder.stockDeducted === true) {
         for (const item of currentOrder.items) {
+          if (item.type === "order") continue; // لا نرجع مخزون منتجات الأوردر
+          
           const pRef = doc(db, "products", item.productId);
           await runTransaction(db, async (tx) => {
             const pSnap = await tx.get(pRef);
@@ -513,6 +542,7 @@ function renderDemandTable() {
 // ============ EVENTS ============
 document.getElementById("searchInput").addEventListener("input", renderOrdersTable);
 document.getElementById("statusFilter").addEventListener("change", renderOrdersTable);
+document.getElementById("typeFilter").addEventListener("change", renderOrdersTable);
 document.getElementById("dateFrom").addEventListener("change", renderOrdersTable);
 document.getElementById("dateTo").addEventListener("change", renderOrdersTable);
 document.getElementById("demandStatus").addEventListener("change", renderDemandTable);
