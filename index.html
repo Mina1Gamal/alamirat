@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>الأَمِيرَاتُ | الرئيسية</title>
+<title>الأَمِيرَاتُ</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
@@ -126,6 +126,8 @@ input,select,textarea{font-family:inherit;font-size:14px}
     <a href="index.html" class="logo"><img src="logo.png" alt="الأميرات" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><span>الأَمِيرَاتُ</span></a>
     <div class="search-bar"><input type="text" id="searchInput" placeholder="ابحث عن منتج..."></div>
     <div class="header-actions">
+      <!-- زر الإدارة مخفي افتراضياً -->
+      <a href="admin-orders.html" class="btn-icon" id="adminBtn" title="لوحة التحكم" style="display:none;">🔐</a>
       <button class="btn-icon" id="cartBtn">🛒 السلة<span class="cart-badge" id="cartBadge">0</span></button>
     </div>
   </div>
@@ -176,9 +178,10 @@ input,select,textarea{font-family:inherit;font-size:14px}
 <div class="toast-container" id="toastContainer"></div>
 
 <script type="module">
-import { db, storeConfig } from "./firebase-config.js";
-import { collection, query, where, onSnapshot, doc, setDoc, runTransaction, serverTimestamp } 
+import { db, auth, storeConfig } from "./firebase-config.js";
+import { collection, query, where, onSnapshot, doc, setDoc, runTransaction, serverTimestamp, getDoc } 
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 let allProducts = [], filteredProducts = [], currentProduct = null;
 let selectedSize = null, selectedColor = null, selectedQty = 1;
@@ -204,6 +207,25 @@ function getVariantStock(product, size, color) {
   const v = (product.variants || []).find(x => x.size === size && x.color === color);
   return v ? v.stock : 0;
 }
+
+// ============ التحقق من صلاحية الأدمن ============
+onAuthStateChanged(auth, async (user) => {
+  const adminBtn = document.getElementById("adminBtn");
+  if (user) {
+    try {
+      const snap = await getDoc(doc(db, "admins", user.uid));
+      if (snap.exists() && snap.data().active === true) {
+        adminBtn.style.display = "flex"; // إظهار زر الإدارة
+      } else {
+        adminBtn.style.display = "none"; // إخفاء إذا كان مسجل ولكن ليس أدمن
+      }
+    } catch (e) {
+      adminBtn.style.display = "none";
+    }
+  } else {
+    adminBtn.style.display = "none"; // إخفاء إذا لم يكن مسجل دخول
+  }
+});
 
 function loadProducts() {
   const q = query(collection(db, "products"), where("status", "==", "active"));
@@ -532,7 +554,7 @@ window.submitOrder = async () => {
   const name = document.getElementById("ckName").value.trim();
   const phone = document.getElementById("ckPhone").value.trim();
   const altPhone = document.getElementById("ckAltPhone").value.trim();
-  const gov = document.getElementById("ckGov").value; // المنيا
+  const gov = document.getElementById("ckGov").value;
   const city = document.getElementById("ckCity").value;
   const address = document.getElementById("ckAddress").value.trim();
   const notes = document.getElementById("ckNotes").value.trim();
@@ -578,7 +600,7 @@ window.submitOrder = async () => {
     await setDoc(orderRef, orderData);
 
     for (const item of cart) {
-      if (item.type === "order") continue; // لا نخصم مخزون منتجات الأوردر
+      if (item.type === "order") continue;
       
       const pRef = doc(db, "products", item.productId);
       await runTransaction(db, async (transaction) => {
@@ -605,6 +627,7 @@ window.submitOrder = async () => {
       <div style="padding:40px 24px;text-align:center">
         <div style="font-size:64px;margin-bottom:16px">✅</div>
         <h2 style="color:#28a745;margin-bottom:12px">تم استلام طلبك بنجاح!</h2>
+        <p style="color:#666;margin-bottom:20px">سنتواصل معك قريباً لتأكيد الطلب.</p>
         <div style="background:#f8f9fa;padding:20px;border-radius:12px;margin-bottom:20px">
           <div style="font-size:13px;color:#666;margin-bottom:4px">رقم الطلب</div>
           <div style="font-size:24px;font-weight:900;color:#e94560">${orderNumber}</div>
