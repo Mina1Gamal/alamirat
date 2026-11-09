@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#f8f9fa;--card:#fff;--primary:#1a1a2e;--accent:#e94560;--muted:#6c757d;--border:#e9ecef;--success:#28a745;--danger:#dc3545;--warning:#ffc107}
+:root{--bg:#f8f9fa;--card:#fff;--primary:#1a1a2e;--accent:#e94560;--muted:#6c757d;--border:#e9ecef;--success:#28a745;--danger:#dc3545;--warning:#ffc107;--info:#17a2b8}
 body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--primary);line-height:1.6}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;border:none}
@@ -25,7 +25,7 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .btn-icon{background:var(--bg);padding:10px 16px;border-radius:10px;display:flex;align-items:center;gap:8px;font-weight:600;position:relative;color:var(--primary);cursor:pointer}
 .cart-badge{position:absolute;top:-6px;left:-6px;background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
 .filters{max-width:1280px;margin:20px auto;padding:0 20px}
-.filters-inner{background:#fff;border-radius:14px;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.filters-inner{background:#fff;border-radius:14px;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
 .filter-group label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px}
 .filter-group select{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:10px;background:#fff;outline:none}
 .filter-group select:focus{border-color:var(--accent)}
@@ -37,16 +37,18 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .product-img img{width:100%;height:100%;object-fit:cover;transition:.3s}
 .product-card:hover .product-img img{transform:scale(1.05)}
 .featured-badge{position:absolute;top:10px;right:10px;background:var(--warning);color:#000;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.order-badge{position:absolute;top:10px;left:10px;background:var(--info);color:#fff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
 .out-of-stock{position:absolute;inset:0;background:rgba(0,0,0,.6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
 .product-info{padding:14px;display:flex;flex-direction:column;gap:8px;flex:1}
 .product-name{font-weight:700;font-size:15px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.product-sub{font-size:11px;color:var(--muted);margin-bottom:-4px}
 .product-price{display:flex;align-items:center;gap:8px}
 .price-current{font-size:18px;font-weight:900;color:var(--accent)}
 .price-old{font-size:13px;color:var(--muted);text-decoration:line-through}
 .product-meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px}
 .product-meta span{background:var(--bg);padding:2px 8px;border-radius:6px}
 .stock-status{font-size:12px;font-weight:700}
-.stock-ok{color:var(--success)}.stock-low{color:var(--warning)}.stock-out{color:var(--danger)}
+.stock-ok{color:var(--success)}.stock-low{color:var(--warning)}.stock-out{color:var(--danger)}.stock-order{color:var(--info)}
 .add-btn{margin-top:auto;background:var(--primary);color:#fff;padding:10px;border-radius:10px;font-weight:700;font-size:14px;transition:.2s}
 .add-btn:hover{background:var(--accent)}
 .add-btn:disabled{background:#ccc;cursor:not-allowed}
@@ -64,7 +66,8 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .thumb.active{border-color:var(--accent)}
 .thumb img{width:100%;height:100%;object-fit:cover}
 .detail-info{padding:24px}
-.detail-info h2{font-size:22px;margin-bottom:12px}
+.detail-info h2{font-size:22px;margin-bottom:4px}
+.detail-sub{font-size:13px;color:var(--muted);margin-bottom:12px;display:block}
 .detail-price{font-size:26px;font-weight:900;color:var(--accent);margin-bottom:16px}
 .option-group{margin-bottom:16px}
 .option-label{font-size:13px;font-weight:700;margin-bottom:8px;display:block}
@@ -120,9 +123,10 @@ input,select,textarea{font-family:inherit;font-size:14px}
 
 <header class="header">
   <div class="header-top">
-    <a href="index.html" class="logo"><span class="logo-icon">👕</span><span> الأَمِيرَاتُ</span></a>
+    <a href="index.html" class="logo"><img src="logo.png" alt="الأميرات" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><span>الأَمِيرَاتُ</span></a>
     <div class="search-bar"><input type="text" id="searchInput" placeholder="ابحث عن منتج..."></div>
     <div class="header-actions">
+      <a href="admin-login.html" class="btn-icon" title="الإدارة">🔐</a>
       <button class="btn-icon" id="cartBtn">🛒 السلة<span class="cart-badge" id="cartBadge">0</span></button>
     </div>
   </div>
@@ -130,6 +134,7 @@ input,select,textarea{font-family:inherit;font-size:14px}
 
 <div class="filters">
   <div class="filters-inner">
+    <div class="filter-group"><label>القسم</label><select id="filterType"><option value="">الكل</option></select></div>
     <div class="filter-group"><label>الفئة</label><select id="filterCategory"><option value="">الكل</option></select></div>
     <div class="filter-group"><label>المقاس</label><select id="filterSize"><option value="">الكل</option></select></div>
     <div class="filter-group"><label>اللون</label><select id="filterColor"><option value="">الكل</option></select></div>
@@ -213,32 +218,43 @@ function loadProducts() {
       '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">⚠️</div>تعذر تحميل المنتجات</div>';
   });
 }
+
 function populateFilters() {
+  const types = [...new Set(allProducts.map(p => p.categoryType).filter(Boolean))];
   const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
   const sizes = [...new Set(allProducts.flatMap(p => p.sizes || []))];
   const colors = [...new Set(allProducts.flatMap(p => p.colors || []))];
+  
+  document.getElementById("filterType").innerHTML = '<option value="">الكل</option>' + types.map(t => `<option value="${t}">${t}</option>`).join("");
   document.getElementById("filterCategory").innerHTML = '<option value="">الكل</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join("");
   document.getElementById("filterSize").innerHTML = '<option value="">الكل</option>' + sizes.map(s => `<option value="${s}">${s}</option>`).join("");
   document.getElementById("filterColor").innerHTML = '<option value="">الكل</option>' + colors.map(c => `<option value="${c}">${c}</option>`).join("");
 }
+
 function applyFilters() {
   const search = document.getElementById("searchInput").value.trim().toLowerCase();
+  const type = document.getElementById("filterType").value;
   const cat = document.getElementById("filterCategory").value;
   const size = document.getElementById("filterSize").value;
   const color = document.getElementById("filterColor").value;
   const sort = document.getElementById("filterSort").value;
+  
   filteredProducts = allProducts.filter(p => {
     if (search && !p.name.toLowerCase().includes(search)) return false;
+    if (type && p.categoryType !== type) return false;
     if (cat && p.category !== cat) return false;
     if (size && !(p.sizes || []).includes(size)) return false;
     if (color && !(p.colors || []).includes(color)) return false;
     return true;
   });
+  
   if (sort === "priceAsc") filteredProducts.sort((a,b) => getEffectivePrice(a) - getEffectivePrice(b));
   else if (sort === "priceDesc") filteredProducts.sort((a,b) => getEffectivePrice(b) - getEffectivePrice(a));
   else filteredProducts.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  
   renderProducts();
 }
+
 function renderProducts() {
   const grid = document.getElementById("productsGrid");
   if (!filteredProducts.length) {
@@ -249,20 +265,35 @@ function renderProducts() {
     const price = getEffectivePrice(p);
     const hasDiscount = price < p.price;
     const stock = p.totalStock || 0;
-    const stockClass = stock === 0 ? "stock-out" : stock < 10 ? "stock-low" : "stock-ok";
-    const stockText = stock === 0 ? "نفذت الكمية" : stock < 10 ? `باقي ${stock} فقط` : "متوفر";
+    const isOrder = p.type === "order";
+    
+    let stockClass, stockText, btnText, btnDisabled;
+    if (isOrder) {
+      stockClass = "stock-order";
+      stockText = "متاح للطلب (أوردر)";
+      btnText = "اطلب الآن";
+      btnDisabled = false;
+    } else {
+      stockClass = stock === 0 ? "stock-out" : stock < 10 ? "stock-low" : "stock-ok";
+      stockText = stock === 0 ? "نفذت الكمية" : stock < 10 ? `باقي ${stock} فقط` : "متوفر بالمخزن";
+      btnText = stock === 0 ? "غير متوفر" : "أضف للسلة";
+      btnDisabled = stock === 0;
+    }
+
     return `<div class="product-card" onclick="window.openProduct('${p.id}')">
       <div class="product-img">
         <img src="${(p.images || [])[0] || 'https://via.placeholder.com/300x300?text=No+Image'}" alt="${p.name}">
         ${p.featured ? '<span class="featured-badge">⭐ مميز</span>' : ''}
-        ${stock === 0 ? '<div class="out-of-stock">نفذت الكمية</div>' : ''}
+        ${isOrder ? '<span class="order-badge">أوردر</span>' : ''}
+        ${(!isOrder && stock === 0) ? '<div class="out-of-stock">نفذت الكمية</div>' : ''}
       </div>
       <div class="product-info">
         <div class="product-name">${p.name}</div>
+        ${p.categoryType ? `<div class="product-sub">${p.categoryType} - ${p.category}</div>` : ''}
         <div class="product-price"><span class="price-current">${formatPrice(price)}</span>${hasDiscount ? `<span class="price-old">${formatPrice(p.price)}</span>` : ''}</div>
         <div class="product-meta">${(p.sizes || []).slice(0,4).map(s => `<span>${s}</span>`).join("")}</div>
         <span class="stock-status ${stockClass}">${stockText}</span>
-        <button class="add-btn" ${stock === 0 ? "disabled" : ""} onclick="event.stopPropagation();window.openProduct('${p.id}')">${stock === 0 ? "غير متوفر" : "أضف للسلة"}</button>
+        <button class="add-btn" ${btnDisabled ? "disabled" : ""} onclick="event.stopPropagation();window.openProduct('${p.id}')">${btnText}</button>
       </div>
     </div>`;
   }).join("");
@@ -273,7 +304,9 @@ window.openProduct = function(id) {
   if (!p) return;
   currentProduct = p; selectedSize = null; selectedColor = null; selectedQty = 1;
   const price = getEffectivePrice(p);
+  const isOrder = p.type === "order";
   const images = (p.images && p.images.length) ? p.images : ["https://via.placeholder.com/500x500?text=No+Image"];
+  
   document.getElementById("productDetailContent").innerHTML = `
     <div class="product-detail">
       <div class="detail-images">
@@ -284,18 +317,28 @@ window.openProduct = function(id) {
       </div>
       <div class="detail-info">
         <h2>${p.name}</h2>
+        ${p.categoryType ? `<span class="detail-sub">${p.categoryType} - ${p.category}</span>` : ''}
         <div class="detail-price">${formatPrice(price)}${price < p.price ? ` <span style="font-size:16px;text-decoration:line-through;color:#999">${formatPrice(p.price)}</span>` : ''}</div>
         <p style="color:#666;font-size:14px;margin-bottom:20px">${p.description || ''}</p>
+        
         <div class="option-group"><label class="option-label">اختر المقاس:</label>
           <div class="option-buttons" id="sizeOptions">${(p.sizes || []).map(s => `<button class="option-btn" onclick="window.selectSize('${s}')">${s}</button>`).join("")}</div>
         </div>
         <div class="option-group"><label class="option-label">اختر اللون:</label>
           <div class="option-buttons" id="colorOptions">${(p.colors || []).map(c => `<button class="option-btn" onclick="window.selectColor('${c}')">${c}</button>`).join("")}</div>
         </div>
+        
+        ${!isOrder ? `
         <div class="option-group" id="stockInfo" style="display:none">
           <label class="option-label">المخزون المتاح:</label>
           <div id="stockText" style="font-weight:700"></div>
         </div>
+        ` : `
+        <div style="background:#e0f7fa;padding:10px;border-radius:8px;margin-bottom:16px;color:#006064;font-size:13px;font-weight:700;text-align:center">
+          ⏳ هذا المنتج يُصنع حسب الطلب (أوردر)
+        </div>
+        `}
+
         <div class="option-group" id="qtyGroup" style="display:none">
           <label class="option-label">الكمية:</label>
           <div class="qty-selector">
@@ -309,6 +352,7 @@ window.openProduct = function(id) {
     </div>`;
   document.getElementById("productModal").classList.add("active");
 };
+
 window.closeProductModal = () => document.getElementById("productModal").classList.remove("active");
 window.changeMainImg = (el, src) => {
   document.getElementById("mainImg").src = src;
@@ -325,38 +369,59 @@ window.selectColor = (color) => {
   document.querySelectorAll("#colorOptions .option-btn").forEach(b => b.classList.toggle("active", b.textContent === color));
   updateVariantUI();
 };
+
 function updateVariantUI() {
   if (!selectedSize || !selectedColor || !currentProduct) return;
-  const stock = getVariantStock(currentProduct, selectedSize, selectedColor);
-  document.getElementById("stockInfo").style.display = "block";
-  const el = document.getElementById("stockText");
-  el.textContent = stock > 0 ? `${stock} قطعة متاحة` : "نفذت الكمية لهذا الاختيار";
-  el.style.color = stock > 0 ? "#28a745" : "#dc3545";
-  document.getElementById("qtyGroup").style.display = stock > 0 ? "block" : "none";
-  selectedQty = 1;
-  const qtyEl = document.getElementById("qtyValue");
-  if (qtyEl) qtyEl.textContent = selectedQty;
-  document.getElementById("addToCartBtn").disabled = stock === 0;
+  const isOrder = currentProduct.type === "order";
+  
+  if (!isOrder) {
+    const stock = getVariantStock(currentProduct, selectedSize, selectedColor);
+    document.getElementById("stockInfo").style.display = "block";
+    const el = document.getElementById("stockText");
+    el.textContent = stock > 0 ? `${stock} قطعة متاحة` : "نفذت الكمية لهذا الاختيار";
+    el.style.color = stock > 0 ? "#28a745" : "#dc3545";
+    document.getElementById("qtyGroup").style.display = stock > 0 ? "block" : "none";
+    selectedQty = 1;
+    const qtyEl = document.getElementById("qtyValue");
+    if (qtyEl) qtyEl.textContent = selectedQty;
+    document.getElementById("addToCartBtn").disabled = stock === 0;
+  } else {
+    document.getElementById("qtyGroup").style.display = "block";
+    selectedQty = 1;
+    document.getElementById("qtyValue").textContent = selectedQty;
+    document.getElementById("addToCartBtn").disabled = false;
+  }
 }
+
 window.changeQty = (delta) => {
-  const stock = getVariantStock(currentProduct, selectedSize, selectedColor);
-  selectedQty = Math.max(1, Math.min(stock, selectedQty + delta));
+  let maxStock = 999;
+  if (currentProduct.type !== "order") {
+    maxStock = getVariantStock(currentProduct, selectedSize, selectedColor);
+  }
+  selectedQty = Math.max(1, Math.min(maxStock, selectedQty + delta));
   document.getElementById("qtyValue").textContent = selectedQty;
 };
+
 window.addSelectedToCart = () => {
   if (!selectedSize || !selectedColor) { toast("اختر المقاس واللون", "error"); return; }
-  const stock = getVariantStock(currentProduct, selectedSize, selectedColor);
-  if (stock < selectedQty) { toast("الكمية غير متاحة", "error"); return; }
+  
+  if (currentProduct.type !== "order") {
+    const stock = getVariantStock(currentProduct, selectedSize, selectedColor);
+    if (stock < selectedQty) { toast("الكمية غير متاحة", "error"); return; }
+  }
+
   const existing = cart.find(i =>
     i.productId === currentProduct.id && i.size === selectedSize && i.color === selectedColor);
+  
   if (existing) {
-    existing.quantity = Math.min(stock, existing.quantity + selectedQty);
+    existing.quantity += selectedQty;
   } else {
     cart.push({
       productId: currentProduct.id, name: currentProduct.name,
       image: (currentProduct.images || [])[0] || "",
       price: getEffectivePrice(currentProduct),
-      size: selectedSize, color: selectedColor, quantity: selectedQty
+      size: selectedSize, color: selectedColor, quantity: selectedQty,
+      type: currentProduct.type
     });
   }
   saveCart(); renderCart(); window.closeProductModal();
@@ -367,6 +432,7 @@ window.toggleCart = () => { document.getElementById("cartDrawer").classList.togg
 document.getElementById("cartBtn").addEventListener("click", () => {
   document.getElementById("cartDrawer").classList.add("open"); renderCart();
 });
+
 function renderCart() {
   const body = document.getElementById("cartBody"), footer = document.getElementById("cartFooter");
   if (!cart.length) {
@@ -377,7 +443,7 @@ function renderCart() {
     <div class="cart-item">
       <div class="cart-item-img"><img src="${item.image || 'https://via.placeholder.com/80'}"></div>
       <div class="cart-item-info">
-        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-name">${item.name} ${item.type === 'order' ? '<span style="color:#17a2b8;font-size:10px">(أوردر)</span>' : ''}</div>
         <div class="cart-item-variant">${item.size} / ${item.color}</div>
         <div class="cart-item-row">
           <div class="qty-selector" style="margin:0">
@@ -405,9 +471,12 @@ function renderCart() {
 
 window.updateCartQty = (idx, delta) => {
   const item = cart[idx];
-  const p = allProducts.find(x => x.id === item.productId);
-  const stock = p ? getVariantStock(p, item.size, item.color) : 999;
-  item.quantity = Math.max(1, Math.min(stock, item.quantity + delta));
+  let maxStock = 999;
+  if (item.type !== "order") {
+    const p = allProducts.find(x => x.id === item.productId);
+    maxStock = p ? getVariantStock(p, item.size, item.color) : 999;
+  }
+  item.quantity = Math.max(1, Math.min(maxStock, item.quantity + delta));
   saveCart(); renderCart();
 };
 window.removeFromCart = (idx) => { cart.splice(idx, 1); saveCart(); renderCart(); toast("تمت الإزالة"); };
@@ -485,8 +554,8 @@ window.submitOrder = async () => {
   
   try {
     const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-    const shipping = 0; // لا يوجد شحن
-    const total = subtotal; // الإجمالي = المجموع الفرعي
+    const shipping = 0;
+    const total = subtotal;
     
     const orderRef = doc(collection(db, "orders"));
     const orderNumber = "ORD-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + String(Date.now()).slice(-5);
@@ -499,7 +568,8 @@ window.submitOrder = async () => {
       items: cart.map(i => ({
         productId: i.productId, productName: i.name, productImage: i.image,
         size: i.size, color: i.color, quantity: i.quantity,
-        unitPrice: i.price, subtotal: i.price * i.quantity
+        unitPrice: i.price, subtotal: i.price * i.quantity,
+        type: i.type
       })),
       subtotal, shippingFee: shipping, total,
       paymentMethod: "cod", status: "new", stockDeducted: true, adminNotes: "",
@@ -509,6 +579,8 @@ window.submitOrder = async () => {
     await setDoc(orderRef, orderData);
 
     for (const item of cart) {
+      if (item.type === "order") continue; // لا نخصم مخزون منتجات الأوردر
+      
       const pRef = doc(db, "products", item.productId);
       await runTransaction(db, async (transaction) => {
         const pSnap = await transaction.get(pRef);
@@ -534,7 +606,6 @@ window.submitOrder = async () => {
       <div style="padding:40px 24px;text-align:center">
         <div style="font-size:64px;margin-bottom:16px">✅</div>
         <h2 style="color:#28a745;margin-bottom:12px">تم استلام طلبك بنجاح!</h2>
-        <p style="color:#666;margin-bottom:20px">سنتواصل معك قريباً لتأكيد الطلب.</p>
         <div style="background:#f8f9fa;padding:20px;border-radius:12px;margin-bottom:20px">
           <div style="font-size:13px;color:#666;margin-bottom:4px">رقم الطلب</div>
           <div style="font-size:24px;font-weight:900;color:#e94560">${orderNumber}</div>
@@ -550,6 +621,7 @@ window.submitOrder = async () => {
 };
 
 document.getElementById("searchInput").addEventListener("input", applyFilters);
+document.getElementById("filterType").addEventListener("change", applyFilters);
 document.getElementById("filterCategory").addEventListener("change", applyFilters);
 document.getElementById("filterSize").addEventListener("change", applyFilters);
 document.getElementById("filterColor").addEventListener("change", applyFilters);
