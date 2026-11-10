@@ -139,14 +139,25 @@ tbody tr:hover{background:#f8f9fa}
       <div class="form-row">
         <div class="form-group"><label>اسم المنتج *</label><input id="pName" required></div>
         <div class="form-group">
-          <label>نوع القسم *</label>
+          <label>القسم *</label>
+          <!-- ✅ تم تحديث قائمة الأقسام هنا لتكون بصيغة الجمع -->
           <select id="pCategoryType" required>
-            <option value="تيشيرت">تيشيرت</option>
-            <option value="قميص">قميص</option>
-            <option value="بنطالون">بنطالون</option>
-            <option value="جاكيت">جاكيت</option>
+            <option value="تيشرتات">تيشرتات</option>
+            <option value="قمصان">قمصان</option>
+            <option value="بنطالونات">بنطالونات</option>
+            <option value="جاكيتات">جاكيتات</option>
+            <option value="فساتين">فساتين</option>
+            <option value="دريسا��">دريسا��</option>
+            <option value="أطقم">أطقم</option>
+            <option value="سوت">سوت</option>
+            <option value="بيجامات">بيجامات</option>
+            <option value="لانجري">لانجري</option>
+            <option value="ملابس داخلية">ملابس داخلية</option>
             <option value="شرابات">شرابات</option>
-            <option value="حذاء">حذاء</option>
+            <option value="أحذية">أحذية</option>
+            <option value="شنط">شنط</option>
+            <option value="ميك اب">ميك اب</option>
+            <option value="برفانات">برفانات</option>
             <option value="إكسسوارات">إكسسوارات</option>
           </select>
         </div>
@@ -200,7 +211,6 @@ tbody tr:hover{background:#f8f9fa}
         </div>
       </div>
 
-      <!-- مصفوفة المخزون تظهر فقط عند اختيار "فوري" -->
       <div class="form-group" id="matrixContainer">
         <label>مصفوفة المخزون (حسب المقاس × اللون)</label>
         <div class="variant-matrix" id="variantMatrix"><p style="color:#999">أضف مقاسات وألوان أولاً</p></div>
@@ -306,7 +316,6 @@ function renderProductsTable() {
     const stock = p.totalStock || 0;
     const stockClass = stock === 0 && p.type === 'instant' ? "stock-out" : stock < 10 && p.type === 'instant' ? "stock-low" : "stock-ok";
     
-    // عرض المخزون أو كلمة "أوردر" حسب نوع المنتج
     let stockDisplay = "";
     if (p.type === "order") {
       stockDisplay = `<span class="stock-badge" style="color:var(--info)">حسب الطلب</span>`;
@@ -346,7 +355,7 @@ function openProductModal(product = null) {
   document.getElementById("modalTitle").textContent = product ? "✏️ تعديل منتج" : "➕ إضافة منتج جديد";
   document.getElementById("productId").value = product?.id || "";
   document.getElementById("pName").value = product?.name || "";
-  document.getElementById("pCategoryType").value = product?.categoryType || "تيشيرت";
+  document.getElementById("pCategoryType").value = product?.categoryType || "تيشرتات";
   document.getElementById("pCategory").value = product?.category || "رجالي";
   document.getElementById("pType").value = product?.type || "instant";
   document.getElementById("pDescription").value = product?.description || "";
@@ -469,7 +478,6 @@ function renderChips() {
   const sBox = document.getElementById("sizesChip");
   const cBox = document.getElementById("colorsChip");
   
-  // تحديث واجهة المقاسات
   sBox.innerHTML = currentSizes.map((s, i) =>
     `<span class="chip">${s}<button type="button" onclick="window.removeSize(${i})">✕</button></span>`).join("") 
     + `<div style="display:flex;width:100%;gap:6px;margin-top:8px">
@@ -477,7 +485,6 @@ function renderChips() {
          <button type="button" style="background:var(--accent);color:#fff;border-radius:8px;padding:0 16px;font-weight:700;cursor:pointer" onclick="window.addSizeChip()">إضافة</button>
        </div>`;
 
-  // تحديث واجهة الألوان
   cBox.innerHTML = currentColors.map((c, i) =>
     `<span class="chip">${c}<button type="button" onclick="window.removeColor(${i})">✕</button></span>`).join("") 
     + `<div style="display:flex;width:100%;gap:6px;margin-top:8px">
@@ -485,7 +492,6 @@ function renderChips() {
          <button type="button" style="background:var(--accent);color:#fff;border-radius:8px;padding:0 16px;font-weight:700;cursor:pointer" onclick="window.addColorChip()">إضافة</button>
        </div>`;
 
-  // دعم زر Enter للكمبيوتر
   document.getElementById("sizeInput").addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); window.addSizeChip(); }
   });
@@ -530,7 +536,6 @@ function renderVariantMatrix() {
   const box = document.getElementById("variantMatrix");
   const type = document.getElementById("pType").value;
   
-  // إذا كان النوع "أوردر"، لا داعي لرسم المصفوفة
   if (type === "order") return;
 
   if (!currentSizes.length || !currentColors.length) {
@@ -592,7 +597,6 @@ document.getElementById("productForm").addEventListener("submit", async (e) => {
       totalStock += st;
     }));
   } else {
-    // في حالة الأوردر، نحفظ المتغيرات بكمية صفرية
     currentSizes.forEach(s => currentColors.forEach(c => {
       variants.push({ size: s, color: c, stock: 0 });
     }));
