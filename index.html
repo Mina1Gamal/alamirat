@@ -77,8 +77,24 @@ input,select,textarea{font-family:inherit;font-size:14px}
   height: 100%; 
   object-fit: contain;
 }
-.thumbnails{display:flex;gap:8px;overflow-x:auto}
-.thumb{width:70px;height:70px;border-radius:8px;overflow:hidden;border:2px solid transparent;cursor:pointer;flex-shrink:0}
+/* ✅ عرض الصور المصغرة كشبكة (4 في كل صف) */
+.thumbnails{
+  display:grid; 
+  grid-template-columns:repeat(4, 1fr); 
+  gap:8px; 
+  margin-top:10px;
+}
+.thumb{
+  width:100%; 
+  aspect-ratio:1; 
+  border-radius:8px; 
+  overflow:hidden; 
+  border:2px solid transparent; 
+  cursor:pointer;
+}
+.thumb.active{
+  border-color:var(--accent);
+}
 .thumb.active{border-color:var(--accent)}
 .thumb img{width:100%;height:100%;object-fit:cover}
 .detail-info{padding:24px}
